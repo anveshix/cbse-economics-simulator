@@ -165,3 +165,107 @@ above Yf; the gap is the vertical one and is named correctly; the three budget i
 ΔY/ΔG = ΔY/ΔI = 5 and ΔY/ΔT = −4; the opening budget sits exactly at Yf; every year has a
 slider setting that closes the gap exactly. A minister who never moves a lever, or moves
 them the wrong way, is not credited with correcting either gap.
+
+---
+
+## 7. The Island — `ppf-island` (XI · Part B · Unit 4)
+
+**Rule.** Rice `R = a·√x` and fish `F = b·√y` from `x`, `y` worker-hours (`x + y ≤ L`). With every hour
+used, `(R/a)² + (F/b)² = L`: a quarter-ellipse, concave to the origin, so the opportunity cost of one
+good (fish given up per extra rice) **rises** along it. Satisfaction `U = R^α · F^(1−α)`.
+
+| Season | Event | L | a | b | α | Best split (rice/fish hrs) |
+|---|---|---|---|---|---|---|
+| 1–2 | ordinary | 100 | 4 | 4 | 0.4 | 40 / 60 |
+| 3 | tastes swing to rice | 100 | 4 | 4 | 0.7 | 70 / 30 |
+| 4 | better net | 100 | 4 | **5** | 0.4 | 40 / 60 |
+| 5 | more people | **140** | 4 | 5 | 0.4 | best on the 10-hour grid |
+| 6 | equal tastes | 140 | 4 | 5 | 0.5 | 70 / 70 |
+
+Tastes change the best *point*, never the frontier (season 3). A net moves only the fish end
+(season 4). More workers move both ends (season 5). Hours left idle land the plan inside the
+frontier. With these utility weights the best split is `x = α·L` whatever `a` and `b` are — a net
+makes more fish but does not change how the hours are best shared; that is a property of the
+Cobb–Douglas taste used here, said plainly rather than hidden.
+
+**Tests (`testLifePpf`).** Every split lies on the quarter-ellipse; the opportunity cost rises at every
+step in every season; `best()` is the satisfaction maximum over the whole grid; the three frontier
+changes are classified from the end-points and graded as gut calls; idle hours always forgo output
+(the evidence is the model's own counterfactual); the increasing-cost insight needs two full-employment
+seasons on the *same* frontier at different rice hours.
+
+## 8. Count the Nation's Output — `value-chain` (XII · Part A · Unit 1)
+
+**Rule.** GDP at market price = Σ (output − intermediate inputs) over domestic producers = output of
+final goods − imported inputs. Wages + profits paid out equal that same total (here 60/40 of each
+producer's value added; no depreciation or indirect taxes, so factor income = value added).
+
+| Year | Twist | True GDP | Every sale | Households only |
+|---|---|---|---|---|
+| 1 | plain chain | 100 | 210 | 100 (right) |
+| 2 | 10 of bread unsold | 100 | 200 | 90 — misses the change in stocks |
+| 3 | 20 of the wheat imported | 80 | 190 | 100 — counts foreign output |
+| 4 | higher prices | 120 | 260 | 120 (right) |
+| 5 | a 30 oven bought by the baker | 130 | 240 | 100 — misses investment |
+| 6 | all three at once | 120 | 230 | 100 |
+
+The four counting options are honest implementations: "every sale" and "households only" are the two
+tempting shortcuts; "value added" and "wages + profits" are the correct methods. A student who always
+picks value added is **not** told they met double counting or the expenditure traps.
+
+**Tests (`testLifeValueChain`).** The value-added identity every year; factor income = value added;
+each shortcut's direction of error is asserted per year; the four gut calls are graded from the
+estimates; trying all four methods lives all four ideas; always adding every sale scores almost nothing.
+
+## 9. The Rupee Desk — `forex-counter` (XII · Part A · Unit 5)
+
+**Rule.** Demand for dollars `Qd = a − 2e`, supply `Qs = c + 1.5e` ($ bn; `e` = ₹ per $), so the market
+rate is `(a − c)/3.5`. Floating: the rate is that. Fixed at `p`: the desk sells `Qd − Qs` from reserves
+when positive and buys `Qs − Qd` into reserves when negative; if the reserves cannot cover it the peg
+collapses and the rate jumps to the market rate. Reserves start at $30 bn.
+
+| Year | Shock | a | c | Market rate |
+|---|---|---|---|---|
+| 1 | ordinary | 300 | 20 | ₹80 |
+| 2 | investment inflow (supply ↑) | 300 | 60 | ₹68.57 |
+| 3 | oil (demand ↑) | 360 | 20 | ₹97.14 |
+| 4 | ordinary | 300 | 20 | ₹80 |
+| 5 | slowdown (demand ↓) | 240 | 20 | ₹62.86 |
+| 6 | severe oil | 380 | 20 | ₹102.86 |
+
+Holding ₹80 all six years leaves reserves 30 → 70 → 10 → 10 → 70 → *needs 80, has 70*: the peg breaks
+in year 6. A peg a little above year 1's equilibrium (₹85) never breaks. Scoring is stability only
+(`100 − 1.5 × %change in the rate`, 0 in a year the peg collapses): a fixed rate has no modelled cost
+beyond needing reserves, which is why the debrief reports both regimes' costs side by side instead of
+declaring a winner. **Assumption:** linear demand/supply and no capital-flight feedback; real peg
+collapses are faster and larger than this.
+
+**Tests (`testLifeForex`).** Qd = Qs at every year's market rate; excess demand below it, excess supply
+above; the supply/demand slopes; floats never touch reserves; a held peg moves reserves by exactly the
+gap; ₹80 breaks in year 6 and reserves never go negative; the explorer path lives all five ideas.
+
+## 10. The Village Lake — `green-commons` (XII · Part B · Unit 7)
+
+**Rule.** Fish left after the catch, `E = S − H`, regrow by `r·E·(1 − E/K)` (`K = 1000`, `r = 0.4`).
+Growth is greatest at `E = K/2`, where it equals the **maximum sustainable yield** `r·K/4 = 100`
+tonnes a year. A steady catch of 100 from a stock of 600 leaves it at 600.
+
+**A fixed catch is not enough.** Below a critical stock even a catch under the MSY empties the lake:
+a constant 90 tonnes settles near 748 from a stock of 600 but collapses from 300 (the critical stock
+for 90 is about 435; 60 still recovers it). The model does not hide this — it is exactly why quotas
+must fall as stocks fall — and the tests assert it. Over ten years a greedy village can out-earn a
+sustainable one (it spends the breeding stock); the debrief says so and points at what the lake
+yields from year 11 on, rather than claiming the greedy village earned less.
+
+**Tests (`testLifeCommons`).** Regrowth is zero when empty and when full and peaks at `K/2` at exactly
+`r·K/4`; steady state at the MSY; 110 a year empties the lake, 90 from a healthy lake does not and
+from a depleted one does; catch + escapement = stock; extinct stays extinct; the gut call is graded
+from the stock the lake actually ends the year with; a village that never over-fished is **not**
+told it saw a collapse.
+
+## What is deliberately not a world
+
+Class XI Part A Unit 1 (what economics is), Class XII Part B Unit 6 (the 1947–90 development
+experience and the 1991 reforms) and Unit 8 (India against Pakistan and China) are history and
+cross-country comparison. A game model could only invent them; the Explorers and the
+`ied-comparison-neighbours` / `ied-five-year-plans` labs already carry them from stated facts.

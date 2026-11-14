@@ -79,7 +79,8 @@ const FILES = [
     // The Living Economy — tested by tools/test-life.js against this same context.
     'js/life-engine.js',
     'js/life-worlds-micro.js',
-    'js/life-worlds-macro.js'
+    'js/life-worlds-macro.js',
+    'js/life-worlds-more.js'
 ];
 
 function noop() {}

@@ -202,8 +202,8 @@ const lifeMachine = createMachine({
 
 const LIFE_UI = {
     hubTitle: B2('🌏 Live the Economy', '🌏 अर्थव्यवस्था को जियो'),
-    hubSub: B2('Don’t study it first — run a stall, sell in a mandi, manage a bank, present a budget. The textbook name comes after you have felt it.',
-        'पहले पढ़ो मत — टपरी चलाओ, मंडी में बेचो, बैंक सँभालो, बजट पेश करो। किताब वाला नाम तब आएगा जब आप उसे महसूस कर चुके होंगे।'),
+    hubSub: B2('Don’t study it first — run a stall, plan an island, count a nation’s output, defend a currency, manage a bank, present a budget. The textbook name comes after you have felt it.',
+        'पहले पढ़ो मत — टपरी चलाओ, द्वीप की योजना बनाओ, देश का उत्पादन गिनो, मुद्रा बचाओ, बैंक सँभालो, बजट पेश करो। किताब वाला नाम तब आएगा जब आप उसे महसूस कर चुके होंगे।'),
     youAre: B2('You are', 'आप हैं'),
     start: B2('Begin ▶', 'शुरू करें ▶'),
     next: B2('Next ▶', 'आगे ▶'),

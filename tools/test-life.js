@@ -457,6 +457,136 @@ module.exports = function runLifeTests({ context, ok, SIMS, CURRICULUM_NODES }) 
         ok(!wd.insights[1].holds && !wd.insights[2].holds, 'FM: cutting spending in a slump and raising it in a boom is never credited as a correction');
     })();
 
+    // ── 7. PPF island: opportunity cost, idle resources, shifts ─────
+    (function testLifePpf() {
+        const w = world('ppf-island'), T = w.truth;
+        const grid = p => { const o = []; for (let x = 0; x <= p.L; x += T.STEP) o.push(x); return o; };
+        [1, 3, 4, 5, 6].forEach(season => {
+            const p = T.params(season);
+            ok(grid(p).every(x => near((T.rice(x, p) / p.a) ** 2 + (T.fish(p.L - x, p) / p.b) ** 2, p.L, 1e-9)), `PPF season ${season}: every full-employment split lies exactly on (R/a)² + (F/b)² = L — the frontier drawn is the one produced`);
+            const oc = grid(p).filter(x => x + T.STEP <= p.L).map(x => T.oc(x, p));
+            ok(oc.every((v, i) => v > 0 && (i === 0 || v > oc[i - 1])), `PPF season ${season}: the opportunity cost of rice rises at every step along the frontier (law of increasing opportunity cost)`);
+            ok(grid(p).every(x => x + 10 > p.L || T.frontierFish(T.rice(x, p), p) >= T.fish(p.L - x, p) - 1e-9 && near(T.frontierFish(T.rice(x, p), p), T.fish(p.L - x, p), 1e-9)), `PPF season ${season}: frontierFish(R) returns the fish of the full-employment split that makes R`);
+            const b = T.best(p);
+            let beaten = false; grid(p).forEach(x => grid(p).forEach(y => { if (x + y <= p.L && T.utility(T.rice(x, p), T.fish(y, p), p) > b.U + 1e-9) beaten = true; }));
+            ok(!beaten && b.x + b.y === p.L, `PPF season ${season}: best() is the satisfaction maximum over every split and uses all the hours`);
+            ok(grid(p).every(x => x === 0 || T.fish(p.L - x + 10, p) > T.fish(p.L - x, p)), `PPF season ${season}: hours left idle could always make more of a good with no sacrifice`);
+        });
+        const b2 = T.best(T.params(2)), b3 = T.best(T.params(3)), b6 = T.best(T.params(6));
+        ok(b2.x === 40 && b2.y === 60 && b3.x === 70 && b3.y === 30 && b6.x === 70 && b6.y === 70, 'PPF: the best split follows tastes — 40/60, then 70/30 in the rice festival, 70/70 on the bigger island with equal tastes');
+        ok(T.change(T.params(2), T.params(3)) === 'none' && T.change(T.params(3), T.params(4)) === 'fish' && T.change(T.params(4), T.params(5)) === 'both', 'PPF: tastes leave the frontier alone; a net moves only the fish end; more people move both ends');
+        ok(T.maxRice(T.params(3)) === T.maxRice(T.params(2)) && T.maxFish(T.params(3)) === T.maxFish(T.params(2)) && T.maxRice(T.params(4)) === T.maxRice(T.params(3)) && T.maxFish(T.params(4)) > T.maxFish(T.params(3)) && T.maxRice(T.params(5)) > T.maxRice(T.params(4)), 'PPF: the end-points move exactly as the change() classification says');
+
+        const gut = r => ({ 3: 3, 4: 0, 5: 2 })[r.round];
+        const expert = r => { const b = T.best(T.params(r.round)); return { decision: { x: b.x, y: b.y }, predict: gut(r) }; };
+        const run = play(w, 1, expert), top = w.debrief(run.history);
+        ok(near(top.score, 100, 1e-6), `PPF: the best split every season scores 100% (${top.score.toFixed(1)})`);
+        ok(run.history.filter(r => r.predict).every(r => r.predict.correct) && run.history.filter(r => r.predict).length === 3, 'PPF: the three gut calls (tastes / net / people) are graded from the model’s own PPFs');
+        ok(!top.insights[1].holds && top.insights[2].holds && top.insights[3].holds && top.insights[4].holds, 'PPF: a planner who never left hours idle is NOT credited with seeing what idleness costs');
+        ok(top.insights[0].holds && /×|fish per unit/.test(top.insights[0].evidence.en), 'PPF: seasons 5 and 6 share one frontier at different rice hours, which earns the increasing-opportunity-cost insight');
+        const fixedSplit = play(w, 1, () => ({ decision: { x: 40, y: 60 } })), fs = w.debrief(fixedSplit.history);
+        ok(!fs.insights[0].holds || fixedSplit.history.some((r, i) => i && r.outcome.key === fixedSplit.history[0].outcome.key && r.outcome.x !== fixedSplit.history[0].outcome.x), 'PPF: the same split every season gives no increasing-cost evidence on one frontier');
+        ok(fs.insights[2].holds === false && fs.insights[4].holds === false && fs.insights[3].holds === true, 'PPF: always guessing the first option is right only for the net (season 4), so only that shift insight is earned — not the tastes or people ones');
+        const lazy = play(w, 1, () => ({ decision: { x: 20, y: 30 } })), ld = w.debrief(lazy.history);
+        ok(ld.insights[1].holds && lazy.history.every(r => r.outcome.idle > 0 && !r.outcome.efficient) && ld.score < 80, `PPF: leaving half the hours idle earns the idle-resources insight and a below-best score (${ld.score.toFixed(0)}%)`);
+        const idleOnly = lazy.history[0].outcome;
+        ok(idleOnly.fishIfEmployed > idleOnly.F && near(idleOnly.fishIfEmployed, T.fish(idleOnly.y + idleOnly.idle, idleOnly.p)), 'PPF: the idle-hours evidence is the model’s own counterfactual (same rice, idle hours on fish)');
+        const none = w.debrief(play(w, 1, () => ({ decision: { x: 0, y: 0 } })).history);
+        ok(none.score === 0, 'PPF: producing nothing scores zero');
+        const over = lifeNewRun(w, 1);
+        ok(lifeCommit(over, { x: 70, y: 70 }, 0) === null && over.history.length === 0, 'PPF: more hours than the island has cannot be committed');
+    })();
+
+    // ── 8. Value chain: three methods of national income ────────────
+    (function testLifeValueChain() {
+        const w = world('value-chain'), T = w.truth;
+        for (let y = 1; y <= 6; y++) {
+            const e = T.econ(y), va = T.added(e);
+            ok(va.total === e.prod - e.wi + e.oven, `Value chain year ${y}: the sum of value added equals output of final goods less imported inputs (${va.total})`);
+            const factor = [va.farmer, va.miller, va.baker, va.maker].reduce((s, v) => s + T.wage(v) + (v - T.wage(v)), 0);
+            ok(factor === va.total && [va.farmer, va.miller, va.baker].every(v => v >= 0), `Value chain year ${y}: wages + profits paid out equal total value added (income method = output method), and no producer adds negative value`);
+            ok(T.estimate('sales', e) > va.total, `Value chain year ${y}: adding every sale overstates GDP (double counting)`);
+            ok(T.estimate('valueadded', e) === va.total && T.estimate('income', e) === va.total, `Value chain year ${y}: value added and income both give the true GDP`);
+            const h = T.estimate('households', e), want = { 1: 'exact', 2: 'low', 3: 'high', 4: 'exact', 5: 'low', 6: 'low' }[y];
+            ok((h === va.total ? 'exact' : (h < va.total ? 'low' : 'high')) === want, `Value chain year ${y}: counting only households' purchases is ${want} (stocks, imports and capital goods are what it gets wrong)`);
+            ok(T.stock(e) === e.prod - e.sold && e.sold <= e.prod, `Value chain year ${y}: unsold bread is output less sales and never negative`);
+        }
+        const expert = r => ({ decision: { method: 'valueadded' }, predict: r.round === 1 ? 0 : (r.round === 2 ? 2 : (r.round === 3 ? 0 : 2)) });
+        const run = play(w, 1, expert), top = w.debrief(run.history);
+        ok(near(top.score, 100) && run.history.every(r => r.outcome.exact), 'Value chain: reporting the sum of value added every year is exactly right every year');
+        ok(run.history.filter(r => r.predict).every(r => r.predict.correct) && run.history.filter(r => r.predict).length === 4, 'Value chain: the four gut calls are graded against the model (too high / right / too low)');
+        ok(!top.insights[0].holds && top.insights[1].holds && !top.insights[2].holds && !top.insights[3].holds, 'Value chain: a statistician who always used value added is NOT told they lived double counting, the expenditure traps, or the income method');
+        const rot = ['sales', 'households', 'valueadded', 'income', 'households', 'valueadded'];
+        const tried = play(w, 1, r => ({ decision: { method: rot[r.round - 1] } })), td = w.debrief(tried.history);
+        ok(td.insights.every(i => i.holds), 'Value chain: trying all four methods lives all four ideas');
+        ok(/stocks|imported|oven/.test(td.insights[2].evidence.en), 'Value chain: the expenditure-method evidence names the actual cause (oven, import or unsold bread)');
+        const hh = play(w, 1, () => ({ decision: { method: 'households' } })), hd = w.debrief(hh.history);
+        ok(hd.insights[2].holds && !hd.insights[0].holds && !hd.insights[1].holds && hd.score > 60 && hd.score < 95, `Value chain: only ever counting households finds the expenditure trap but not double counting (${hd.score.toFixed(0)}%)`);
+        const allSales = w.debrief(play(w, 1, () => ({ decision: { method: 'sales' } })).history);
+        ok(allSales.score < 10 && allSales.insights[0].holds, `Value chain: always adding every sale scores almost nothing (${allSales.score.toFixed(0)}%) and lives double counting`);
+    })();
+
+    // ── 9. Forex counter: floating vs fixed rates ───────────────────
+    (function testLifeForex() {
+        const w = world('forex-counter'), T = w.truth;
+        const want = { 1: 80, 2: 68.5714, 3: 97.1429, 4: 80, 5: 62.8571, 6: 102.8571 };
+        for (let y = 1; y <= 6; y++) {
+            const r = T.regime(y), e = T.eq(r);
+            ok(near(e.e, want[y], 1e-3) && near(T.qd(e.e, r), T.qs(e.e, r), 1e-9) && near(T.qd(e.e, r), e.q, 1e-9), `Forex year ${y}: demand for dollars = supply of dollars at the market rate ₹${want[y]}`);
+            ok(T.gap(e.e - 5, r) > 0 && T.gap(e.e + 5, r) < 0, `Forex year ${y}: a rate below equilibrium means excess demand for dollars, above it excess supply`);
+            ok([60, 70, 80, 90, 100, 110].every((rate, i, a) => i === 0 || (T.qd(rate, r) < T.qd(a[i - 1], r) && T.qs(rate, r) > T.qs(a[i - 1], r))), `Forex year ${y}: a dearer dollar lowers the demand for it and raises its supply`);
+        }
+        ok(T.eq(T.regime(2)).e < T.E0 && T.eq(T.regime(3)).e > T.E0 && T.eq(T.regime(5)).e < T.E0 && T.eq(T.regime(6)).e > T.eq(T.regime(3)).e, 'Forex: more dollars on offer ⇒ the rupee appreciates; more dollars wanted ⇒ it depreciates');
+        const gutRight = { 2: 0, 3: 2, 5: 0 };
+        const floatAll = play(w, 1, r => ({ decision: { regime: 'float' }, predict: gutRight[r.round] }));
+        ok(floatAll.history.every(r => near(r.outcome.rate, r.outcome.eq) && !r.outcome.broke && r.outcome.change === 0) && near(floatAll.state.reserves, T.RESERVES0), 'Forex: a floating rate always equals the market rate, never breaks and never touches reserves');
+        ok(floatAll.history.filter(r => r.predict).every(r => r.predict.correct), 'Forex: the three gut calls (appreciate / depreciate / appreciate) are graded from the model');
+        const peg80 = play(w, 1, () => ({ decision: { regime: 'peg', peg: 80 }, predict: 1 }));
+        const o = peg80.history.map(r => r.outcome);
+        ok(o.slice(0, 5).every(x => x.held && x.rate === 80 && near(x.reserves, x.reservesBefore - x.gap, 1e-9)), 'Forex: while it holds, a fixed rate stays put and reserves move by exactly the gap (sold when dollars are wanted, bought when they are offered)');
+        ok(o[5].broke && near(o[5].rate, T.eq(T.regime(6)).e, 1e-9) && o[5].reserves === 0 && o[5].points === 0, 'Forex: holding ₹80 through the oil shocks breaks the peg in year 6 — the rate jumps to the market rate and the reserves are gone');
+        ok(o.every(x => x.reserves >= -1e-9), 'Forex: reserves never go below zero');
+        const peg85 = play(w, 1, () => ({ decision: { regime: 'peg', peg: 85 } })), p85 = peg85.history.map(r => r.outcome);
+        ok(p85.every(x => x.held) && w.debrief(peg85.history).score > w.debrief(floatAll.history).score, 'Forex: a rate set a little above the first year’s equilibrium never breaks and steadies the rate better than floating');
+        const explorer = r => ({ decision: ({ 1: { regime: 'float' }, 2: { regime: 'peg', peg: 80 }, 3: { regime: 'peg', peg: 80 }, 4: { regime: 'peg', peg: 80 }, 5: { regime: 'float' }, 6: { regime: 'peg', peg: 80 } })[r.round], predict: gutRight[r.round] });
+        const ex = w.debrief(play(w, 1, explorer).history);
+        ok(ex.insights.every(i => i.holds), 'Forex: a desk head who floats, holds too strong, and lets a peg break lives all five ideas');
+        const only = w.debrief(floatAll.history);
+        ok(only.insights[0].holds && !only.insights[2].holds && !only.insights[3].holds && !only.insights[4].holds, 'Forex: never fixing the rate is NOT credited with the drain, the collapse, or the fixed-vs-flexible comparison');
+        const wrongGuess = w.debrief(play(w, 1, r => ({ decision: { regime: 'float' }, predict: 1 })).history);
+        ok(!wrongGuess.insights[1].holds, 'Forex: wrong appreciation/depreciation calls do not earn that insight');
+        ok(floatAll.history.every(r => r.outcome.points >= 0 && r.outcome.points <= 100), 'Forex: every year’s points lie between 0 and 100');
+    })();
+
+    // ── 10. Green commons: renewable resource and sustainable yield ─
+    (function testLifeCommons() {
+        const w = world('green-commons'), T = w.truth;
+        let maxG = 0, argmax = 0;
+        for (let E = 0; E <= T.K; E += 5) { const g = T.regrow(E); if (g > maxG) { maxG = g; argmax = E; } }
+        ok(T.regrow(0) === 0 && near(T.regrow(T.K), 0) && near(maxG, T.msy(), 1e-9) && argmax === T.K / 2, 'Commons: regrowth is zero for an empty and for a full lake and greatest at half the carrying capacity, where it equals r·K/4');
+        ok(near(T.next(600, 100).next, 600, 1e-9), 'Commons: catching exactly the maximum sustainable yield from the steady stock leaves it unchanged');
+        const run = (S, H, years) => { let s = S; for (let i = 0; i < years; i++) s = T.next(s, H).next; return s; };
+        ok(run(600, 110, 100) <= 1e-6, 'Commons: a catch above the maximum sustainable yield, repeated, eventually empties the lake');
+        ok(run(600, 90, 100) > 500, 'Commons: a catch below the maximum sustainable yield settles at a healthy stock, from a healthy start');
+        ok(run(300, 90, 100) <= 1e-6 && run(300, 60, 100) > 500, 'Commons: the same fixed catch of 90 that is safe from a healthy lake empties a depleted one (300 tonnes) — a quota must fall with the stock; 60 still recovers it');
+        ok(T.next(50, 300).take === 50 && T.next(50, 300).next === 0 && T.next(0, 100).next === 0, 'Commons: you cannot catch more than is there, and an extinct lake stays extinct');
+        ok(T.next(800, 0).next > 800 && T.next(1000, 0).next === 1000, 'Commons: catching nothing from a crowded lake grows it, and a full lake stays full');
+        let identity = true;
+        for (let S = 0; S <= 1000; S += 50) for (let H = 0; H <= 300; H += 10) { const r = T.next(S, H); if (!near(r.take + r.E, S, 1e-9) || r.next < 0 || r.next > T.K + 1e-9) identity = false; }
+        ok(identity, 'Commons: catch + escapement = stock, and next year’s stock stays between 0 and the carrying capacity, everywhere on the grid');
+        const steadyPlan = play(w, 1, () => ({ decision: { h: 100 }, predict: 2 })), sp = w.debrief(steadyPlan.history, steadyPlan.state);
+        ok(near(sp.score, 100, 1e-6), `Commons: catching 100 tonnes a year for ten years scores 100% (${sp.score.toFixed(1)})`);
+        ok(sp.insights[0].holds && sp.insights[1].holds && !sp.insights[2].holds && !sp.insights[3].holds, 'Commons: a village that never over-fished is credited with regrowth and sustainable yield — and NOT told it saw a collapse');
+        ok(steadyPlan.history.every(r => r.outcome.income === r.outcome.take * T.PRICE), 'Commons: income is tonnes × price');
+        const greedy = play(w, 1, () => ({ decision: { h: 300 }, predict: 0 })), gd = w.debrief(greedy.history, greedy.state);
+        ok(greedy.state.stock === 0 && greedy.history.some(r => r.outcome.extinct) && gd.score < 40, `Commons: catching 300 every year empties the lake and scores low (${gd.score.toFixed(0)}%)`);
+        ok(!gd.insights[1].holds && gd.insights[2].holds && gd.insights[3].holds, 'Commons: that village lives the collapse and the trade-off, and is NOT credited with sustainable yield');
+        const none = w.debrief(play(w, 1, () => ({ decision: { h: 0 } })).history, { stock: T.K });
+        ok(none.score === 0, 'Commons: catching nothing earns nothing, however healthy the lake');
+        const gutRun = play(w, 1, () => ({ decision: { h: 100 }, predict: 1 }));
+        ok(gutRun.history.filter(r => r.predict).length === 3 && gutRun.history.filter(r => r.predict).every(r => { const d = r.outcome.after - r.outcome.stock; return r.predict.answer === (d > 10 ? 0 : (d < -10 ? 2 : 1)); }), 'Commons: the gut call is graded from the stock the lake actually ends the year with');
+    })();
+
     setLang('en');
     console.log(`Living Economy: ${W.length} worlds tested (${W.map(x => x.id).join(', ')}).`);
 };

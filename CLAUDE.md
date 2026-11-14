@@ -143,13 +143,15 @@ Class XII — Part A: Introductory Macroeconomics (Units 1–5)
 
 Every other mode starts from the diagram. A **Living World** starts from a role: the student
 runs a chai stall, sells in a mandi, spends pocket money, surveys a town, manages a bank,
-presents five Budgets. They decide, people react, and only in the debrief is the idea named,
+presents five Budgets, plans an island, counts a nation's output, runs a rupee desk, manages
+a lake. They decide, people react, and only in the debrief is the idea named,
 with **their own rounds as the evidence**. This is the experiential cycle NEP 2020 asks for:
-live → see → notice → name → apply. Six worlds, both classes; the home screen lists them
-first. Worked models: `docs/economics/models/living-worlds.md`.
+live → see → notice → name → apply. Ten worlds, both classes (every syllabus unit that has a
+honest numeric model; Class XI A·1 and XII B·6, B·8 are history and comparison data and have none
+on purpose); the home screen lists them first. Worked models: `docs/economics/models/living-worlds.md`.
 
 - **A separate registry, not a `sim.mode`.** `LIFE_WORLDS` (js/life-worlds-micro.js,
-  js/life-worlds-macro.js) is not part of `SIMS`: a world has no controls, quiz bank or
+  js/life-worlds-macro.js, js/life-worlds-more.js) is not part of `SIMS`: a world has no controls, quiz bank or
   `SIM_I18N_HI` entry, so it does not count toward the coverage matrix. It still carries
   `class`/`part`/`unit`/`syllabusIds`, checked against `CURRICULUM_NODES`, and `labs` — the
   real sims its debrief hands on to.

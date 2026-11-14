@@ -506,7 +506,7 @@ function ok(cond, label) {
     await page.reload({ waitUntil: 'load' });
     await page.waitForSelector('#screen-home.active');
     const lifeIds = await page.evaluate(() => LIFE_WORLDS.map(w => ({ id: w.id, rounds: w.rounds })));
-    ok(lifeIds.length >= 6 && await page.locator('.life-card').count() === lifeIds.length, `life: the home hub shows a card for each of the ${lifeIds.length} worlds`);
+    ok(lifeIds.length >= 10 && await page.locator('.life-card').count() === lifeIds.length, `life: the home hub shows a card for each of the ${lifeIds.length} worlds`);
     const lifeState = () => page.evaluate(() => ({ app: document.body.dataset.screen, life: document.body.dataset.life, snap: econsim.state().machines.life }));
     const gutCall = async () => { const g = page.locator('[data-life-predict]'); if (await g.count()) await g.first().click(); };
     // Sets a range input the way a person does (a real input event), on its step.
