@@ -354,7 +354,6 @@ function renderQuizQuestion() {
     if (feedbackEl) { feedbackEl.classList.add('hidden'); feedbackEl.textContent = ''; }
     const nextBtn = document.getElementById('quiz-next-btn');
     if (st !== 'answered') {
-        if (feedbackEl) { feedbackEl.classList.add('hidden'); feedbackEl.innerHTML = ''; }
         if (nextBtn) nextBtn.classList.add('hidden');
         return;
     }
@@ -370,21 +369,13 @@ function renderQuizQuestion() {
     });
     if (feedbackEl) {
         feedbackEl.classList.remove('hidden');
-        feedbackEl.textContent = '';
         const statusB = document.createElement('b');
-        const correctText = localize
-            ? localize({ en: '✅ Correct!', hi: '✅ सही जवाब!' })
-            : '✅ Correct!';
-        const incorrectText = localize
-            ? localize({ en: '❌ Not quite.', hi: '❌ यह सही नहीं है।' })
-            : '❌ Not quite.';
-        statusB.textContent = (correct ? correctText : incorrectText) + ' ';
+        statusB.textContent = quizLocalize(correct
+            ? { en: '✅ Correct!', hi: '✅ सही जवाब!' }
+            : { en: '❌ Not quite.', hi: '❌ यह सही नहीं है।' }) + ' ';
         feedbackEl.appendChild(statusB);
-
         feedbackEl.appendChild(document.createTextNode(q.explain || ''));
 
-        const correctText = quizLocalize({ en: '✅ Correct!', hi: '✅ सही जवाब!' });
-        const incorrectText = quizLocalize({ en: '❌ Not quite.', hi: '❌ यह सही नहीं है।' });
         // A wrong option can carry its OWN targeted misconception text
         // (q.misconceptions, see normalizeQuizQuestion) — distinct from
         // `explain`'s general "here's the right answer" — naming exactly
@@ -395,14 +386,10 @@ function renderQuizQuestion() {
         if (misconception) {
             const miscDiv = document.createElement('div');
             miscDiv.className = 'quiz-misconception';
-            const labelText = localize ? localize({ en: 'Common mistake:', hi: 'सामान्य भूल:' }) : 'Common mistake:';
+            const labelText = quizLocalize({ en: 'Common mistake:', hi: 'सामान्य भूल:' });
             miscDiv.textContent = `⚠️ ${labelText} ${misconception}`;
             feedbackEl.appendChild(miscDiv);
         }
-        const misconceptionHTML = misconception
-            ? `<div class="quiz-misconception">⚠️ ${quizLocalize({ en: 'Common mistake:', hi: 'सामान्य भूल:' })} ${misconception}</div>`
-            : '';
-        feedbackEl.innerHTML = `<b>${correct ? correctText : incorrectText}</b> ${q.explain}${misconceptionHTML}`;
     }
     if (nextBtn) {
         nextBtn.classList.remove('hidden');

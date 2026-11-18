@@ -222,8 +222,13 @@ function rebuildHomeGrids() {
 // one. See js/quiz-engine.js for question generation/scoring.
 function wireQuizModal() {
     const launchBtn = document.getElementById('quiz-launch-btn');
+    // A failed quiz script must not stop the rest of the app from starting.
+    if (typeof openQuiz !== 'function' || typeof closeQuiz !== 'function' || typeof advanceQuiz !== 'function') {
+        if (launchBtn) launchBtn.disabled = true;
+        return;
+    }
     if (launchBtn) launchBtn.addEventListener('click', () => {
-        if (currentSim && typeof openQuiz === 'function') openQuiz(currentSim);
+        if (currentSim) openQuiz(currentSim);
     });
 
     const closeBtn = document.getElementById('quiz-close-btn');
@@ -235,9 +240,7 @@ function wireQuizModal() {
     if (continueBtn) continueBtn.addEventListener('click', closeQuiz);
 
     const nextBtn = document.getElementById('quiz-next-btn');
-    if (nextBtn) nextBtn.addEventListener('click', () => {
-        if (typeof advanceQuiz === 'function') advanceQuiz();
-    });
+    if (nextBtn) nextBtn.addEventListener('click', advanceQuiz);
 }
 
 // Animates each hero-stats-strip number counting up from 0 to its real,

@@ -92,6 +92,9 @@ function ok(cond, label) {
 
     await page.goto(`http://localhost:${PORT}/index.html`, { waitUntil: 'load' });
     await page.waitForSelector('#screen-home.active', { timeout: 10000 });
+    if (!ok(errors.length === 0, `startup loads all scripts without errors${errors.length ? ' — ' + errors.join('; ') : ''}`)) {
+        throw new Error('App startup failed; stopping the browser sweep.');
+    }
 
     const simIds = await page.evaluate(() => window.SIMS ? SIMS.map(s => s.id) : (typeof SIMS !== 'undefined' ? SIMS.map(s => s.id) : []));
     ok(simIds.length >= 30, `home page loaded with a substantial SIMS array (got ${simIds.length})`);
@@ -353,6 +356,9 @@ function ok(cond, label) {
     await page.locator('#quiz-close-btn').click();
     await page.waitForTimeout(80);
     ok(await page.locator('#quiz-overlay').evaluate(el => el.classList.contains('hidden')), 'quiz (Data Lab sim): ✕ button also closes the overlay');
+    await page.locator('#quiz-launch-btn').click();
+    await page.locator('#quiz-overlay').click({ position: { x: 8, y: 8 } });
+    ok(!(await page.locator('#quiz-overlay').isVisible()), 'quiz (Data Lab sim): clicking the backdrop closes the overlay');
     ok(errors.length === beforeQuiz2, `quiz (Data Lab sim): no console/page errors${errors.length > beforeQuiz2 ? ' — ' + errors.slice(beforeQuiz2).join('; ') : ''}`);
 
     // ── Hindi (i18n) toggle ────────────────────────────────────────
@@ -633,6 +639,20 @@ function ok(cond, label) {
     ok(overflow <= 4, `life (debrief) has no horizontal overflow at 390px width (overflow=${overflow}px)`);
 
     ok(errors.length === 0, `zero console/page errors across the entire run (got ${errors.length}: ${errors.slice(0, 5).join(' | ')})`);
+
+    // Isolate an unavailable quiz feature from the rest of app startup.
+    // Skip the dependent question banks too: they cannot run without the engine.
+    const noQuizPage = await browser.newPage({ serviceWorkers: 'block', reducedMotion: 'reduce' });
+    await noQuizPage.route(/\/js\/quiz-.*\.js(?:\?|$)/, route => route.fulfill({ contentType: 'application/javascript', body: '' }));
+    const noQuizErrors = [];
+    noQuizPage.on('pageerror', error => noQuizErrors.push(error.message));
+    await noQuizPage.goto(`http://localhost:${PORT}/index.html`);
+    ok(noQuizErrors.length === 0, `startup without quizzes does not throw${noQuizErrors.length ? ' — ' + noQuizErrors.join('; ') : ''}`);
+    await noQuizPage.evaluate(() => openSim('micro-ppf'));
+    ok(await noQuizPage.locator('#quiz-launch-btn').isDisabled(), 'without the quiz engine, the quiz launcher is disabled');
+    await noQuizPage.locator('#sim-back').click();
+    ok(await noQuizPage.locator('#screen-home').isVisible(), 'without the quiz engine, the simulation Back button still works');
+    await noQuizPage.close();
 
     await browser.close();
     server.close();
