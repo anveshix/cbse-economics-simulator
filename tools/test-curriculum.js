@@ -92,7 +92,8 @@ function stubEl() {
         children: [],
         appendChild(child) { this.children = this.children || []; this.children.push(child); },
         get innerHTML() { return this._html || ''; }, set innerHTML(v) { this._html = v; if (v === '') this.children = []; },
-        get textContent() { return this._text || ''; }, set textContent(v) { this._text = v; },
+        get textContent() { return (this._text || '') + this.children.map(child => child.textContent).join(''); },
+        set textContent(v) { this._text = String(v); this._html = ''; this.children = []; },
         offsetWidth: 100
     };
 }
@@ -1596,35 +1597,29 @@ function extractNodePos(html, label) {
     const renderQuestionEl = sandbox.document.getElementById('quiz-question');
     const feedbackEl = sandbox.document.getElementById('quiz-feedback');
 
-    // Set up mock quizState with malicious script tags / unescaped HTML characters in question, explain, and misconception
+    // Enter the asking state with a deterministic raw quiz item. Replacing
+    // quizState.questions would bypass the machine and be overwritten on render.
     vm.runInContext(`
-        quizState = {
-            sim: SIMS[0],
-            questions: [{
-                level: 'apply',
-                question: 'What happens if <script>alert("xss")</script> & |Ed| < 1?',
-                options: ['Option 1', 'Option 2'],
-                correctIndex: 0,
-                explain: 'Explanation with <img src=x onerror=alert(1)> & text',
-                misconceptions: { 'Option 2': 'Misconception with <svg onload=alert(2)> & text' }
-            }],
-            index: 0,
-            score: 0,
-            answered: false
-        };
+        quizMachine.send('OPEN', { sim: SIMS[0], items: [{ sim: SIMS[0], order: [0, 1], raw: {
+            level: 'apply',
+            question: 'What happens if <em>elasticity</em> & |Ed| < 1?',
+            options: ['Option 1', 'Option 2'],
+            correctIndex: 0,
+            explain: 'Explanation with <strong>markup</strong> & text',
+            misconceptions: { 1: 'Misconception with <span>markup</span> & text' }
+        } }] });
     `, context);
 
     renderQuizQuestion();
+    ok(!renderQuestionEl.innerHTML.includes('<em>'), 'Quiz question does not render literal markup as HTML');
+    ok(renderQuestionEl.textContent.includes('<em>elasticity</em> & |Ed| < 1'), 'Quiz question preserves literal special characters');
 
-    ok(!renderQuestionEl.innerHTML.includes('<script>'), 'Quiz question rendering does not inject raw HTML tags from question string');
-    ok(renderQuestionEl.textContent.includes('<script>alert("xss")</script>'), 'Quiz question text content preserves literal special characters safely');
-
-    // Simulate choosing incorrect answer (Option 2)
     selectQuizAnswer(1);
+    ok(!feedbackEl.innerHTML.includes('<strong>') && !feedbackEl.innerHTML.includes('<span>'), 'Quiz feedback does not render explanation or misconception markup as HTML');
+    ok(feedbackEl.textContent.includes('<strong>markup</strong> & text'), 'Quiz feedback preserves the literal explanation');
+    ok(feedbackEl.children.find(child => child.className === 'quiz-misconception')?.textContent.includes('<span>markup</span> & text'), 'Quiz misconception preserves the literal text in its own callout');
 
-    ok(!feedbackEl.innerHTML.includes('<img') && !feedbackEl.innerHTML.includes('<svg'), 'Quiz feedback rendering does not inject raw HTML tags from explanation/misconception');
-    ok(feedbackEl.textContent.includes('<img src=x onerror=alert(1)>'), 'Quiz feedback text content preserves literal explanation safely');
-    ok(feedbackEl.textContent.includes('<svg onload=alert(2)>'), 'Quiz misconception text content preserves literal misconception safely');
+    context.closeQuiz();
 })();
 
 // ── 5. Quiz bank coverage + structural validation ────────────────
