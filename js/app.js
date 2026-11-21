@@ -304,8 +304,35 @@ function initApp() {
     // Attach back button behaviors
     const backBtnIndex = document.getElementById('sim-back');
     if (backBtnIndex) {
-        backBtnIndex.addEventListener('click', () => showScreen('home'));
+        backBtnIndex.addEventListener('click', () => {
+            if (document.body.classList.contains('projector-mode')) {
+                document.body.classList.remove('projector-mode');
+            }
+            showScreen('home');
+        });
     }
+
+    const projectorBtn = document.getElementById('projector-toggle');
+    const toggleProjector = () => {
+        const active = document.body.classList.toggle('projector-mode');
+        if (projectorBtn) projectorBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        const chartEl = document.getElementById('sim-dom-overlay');
+        if (typeof Plotly !== 'undefined' && chartEl && chartEl.querySelector('.js-plotly-plot')) {
+            setTimeout(() => {
+                try { Plotly.Plots.resize(chartEl.querySelector('.js-plotly-plot')); } catch (_e) {}
+            }, 60);
+        }
+    };
+    if (projectorBtn) projectorBtn.addEventListener('click', toggleProjector);
+    document.addEventListener('keydown', e => {
+        if (e.key === 'p' || e.key === 'P') {
+            const tag = e.target && e.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            if (typeof appMachine !== 'undefined' && appMachine.state === 'sim') {
+                toggleProjector();
+            }
+        }
+    });
 
     const backBtnSys = document.getElementById('back-btn');
     if (backBtnSys) {

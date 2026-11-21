@@ -2931,3 +2931,83 @@ header, .sim-topbar {
   .life-go { align-self: stretch; text-align: center; }
   .life-actions .life-go { flex: 1 1 auto; }
 }
+
+/* ── Classroom / Projector Mode & Board Exam Corner ──────────── */
+.sim-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.projector-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border1);
+  background: var(--surface);
+  color: var(--text1);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+.projector-btn:hover {
+  background: var(--surface-subtle);
+  border-color: var(--primary);
+}
+body.projector-mode .projector-btn {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+body.projector-mode #main-nav,
+body.projector-mode .sim-right,
+body.projector-mode .mima-fab,
+body.projector-mode #mima-drawer {
+  display: none !important;
+}
+body.projector-mode #screen-sim {
+  padding-top: 10px;
+}
+body.projector-mode .sim-body {
+  grid-template-columns: 1fr !important;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+body.projector-mode .canvas-shell {
+  min-height: 68vh;
+}
+
+.exam-bridge-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text2);
+}
+.exam-bridge-step {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface-subtle);
+  border-left: 3px solid var(--primary);
+}
+.exam-bridge-step-title {
+  font-weight: 700;
+  color: var(--text1);
+  margin-bottom: 2px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.exam-bridge-trap {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(217, 119, 6, 0.08);
+  border-left: 3px solid var(--stats-a);
+  color: var(--text1);
+  font-size: 12.5px;
+}
