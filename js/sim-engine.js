@@ -1034,7 +1034,59 @@ function renderSimChart(sim) {
     prevSimResult = { traces: (result.traces || []).slice(), metrics: Object.assign({}, result.metrics) };
 }
 
+function renderExamBridge(sim) {
+    const body = document.getElementById('exam-bridge-body');
+    if (!body || !sim) return;
+    body.textContent = '';
+
+    const isHi = typeof currentLang !== 'undefined' && currentLang === 'hi';
+    const title = (typeof simField === 'function' ? simField(sim, 'title') : sim.title) || '';
+    const keyIdea = (typeof simField === 'function' ? simField(sim, 'keyIdea') : sim.keyIdea) || '';
+
+    const steps = [
+        {
+            heading: isHi ? '1. परिभाषा एवं अवधारणा (1–2 अंक)' : '1. Define & State Principle (1–2 Marks)',
+            text: keyIdea || (isHi
+                ? `${title} की मानक NCERT परिभाषा लिखें और मुख्य मान्यताएँ स्पष्ट करें।`
+                : `State the standard NCERT definition of ${title} and list its key assumptions clearly.`)
+        },
+        {
+            heading: isHi ? '2. आरेख / अनुसूची (2–3 अंक)' : '2. Diagram / Schedule (2–3 Marks)',
+            text: isHi
+                ? 'अक्षों (X और Y) को इकाइयों सहित स्पष्ट रूप से नामांकित करें, प्रारंभिक और नए संतुलन बिंदु (E → E₁) दिखाएँ, और वक्र के खिसकाव या संचलन को तीर से दर्शाएँ।'
+                : 'Label both axes with units, mark the initial and new equilibrium points (E → E₁), and use arrows to show any curve shift or movement along the curve.'
+        },
+        {
+            heading: isHi ? '3. निष्कर्ष (1 अंक)' : '3. Exam Conclusion (1 Mark)',
+            text: isHi
+                ? 'अंतिम परिणाम को कारण-प्रभाव के रूप में एक वाक्य में लिखें (जैसे: "अतः संतुलन आय बढ़ती है")।'
+                : 'Close with a crisp cause-and-effect sentence linking the variable change to the final equilibrium outcome.'
+        }
+    ];
+
+    steps.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'exam-bridge-step';
+        const h = document.createElement('div');
+        h.className = 'exam-bridge-step-title';
+        h.textContent = s.heading;
+        const p = document.createElement('div');
+        p.textContent = s.text;
+        div.appendChild(h);
+        div.appendChild(p);
+        body.appendChild(div);
+    });
+
+    const trap = document.createElement('div');
+    trap.className = 'exam-bridge-trap';
+    trap.textContent = isHi
+        ? '⚠️ परीक्षक की सामान्य चेतावनी: वक्र के साथ संचलन (Movement) और वक्र के खिसकाव (Shift) को कभी न मिलाएँ।'
+        : '⚠️ Examiner Trap: Never confuse a movement along a curve (price/own-variable change) with a shift of the curve (other-determinant change).';
+    body.appendChild(trap);
+}
+
 function renderSim(sim) {
+    renderExamBridge(sim);
     const conceptBody = document.getElementById('concept-body');
     const formulaBody = document.getElementById('formula-body');
     const canvas = document.getElementById('sim-canvas');

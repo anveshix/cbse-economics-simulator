@@ -223,7 +223,10 @@
       <span class="sim-module-tag" id="sim-module-tag">Microeconomics</span>
       <span class="sim-title-nav" id="sim-title-nav">Supply & Demand</span>
     </div>
-    <div class="sim-xp-tag" id="sim-xp-tag">+100 XP</div>
+    <div class="sim-topbar-actions">
+      <button type="button" class="projector-btn" id="projector-toggle" title="Classroom / Projector Mode (Press P)" aria-pressed="false">📽️ Projector</button>
+      <div class="sim-xp-tag" id="sim-xp-tag">+100 XP</div>
+    </div>
   </div>
 
   <div class="sim-body">
@@ -250,6 +253,10 @@
       <div class="info-card readings-card" id="readings-card">
         <div class="info-card-header collapsible-header" data-panel-key="readings" role="button" tabindex="0" aria-expanded="true"><span data-i18n="card.readings">📊 Live Readings</span><span class="panel-chevron" aria-hidden="true">⌄</span></div>
         <div class="readings-body" id="readings-body"></div>
+      </div>
+      <div class="info-card collapsed" id="exam-bridge-card">
+        <div class="info-card-header collapsible-header" data-panel-key="examBridge" role="button" tabindex="0" aria-expanded="false"><span data-i18n="card.examBridge">📝 Board Exam Corner (3–6 Marks)</span><span class="panel-chevron" aria-hidden="true">⌄</span></div>
+        <div class="info-card-body exam-bridge-body" id="exam-bridge-body"></div>
       </div>
       <div class="info-card hidden collapsed" id="practice-card">
         <div class="info-card-header collapsible-header" data-panel-key="practice" role="button" tabindex="0" aria-expanded="false"><span data-i18n="card.practice">🧩 Guided Practice</span><span class="panel-chevron" aria-hidden="true">⌄</span></div>
