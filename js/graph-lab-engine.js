@@ -338,7 +338,13 @@ function glSyncChip(v) {
     const out = document.getElementById(`gl-val-${v.id}`);
     if (fill) fill.style.width = pct.toFixed(1) + '%';
     if (knob) { knob.style.left = pct.toFixed(1) + '%'; knob.setAttribute('aria-valuenow', String(val)); }
-    if (out) out.innerHTML = `${glFmtVar(val, v)}<em>${glEsc(hiPath(glSim, `graphLab.vars.${v.id}.unit`) || v.unit || '')}</em>`;
+    if (out) {
+        const unitStr = (typeof hiPath === 'function' ? hiPath(glSim, `graphLab.vars.${v.id}.unit`) : null) || v.unit || '';
+        out.textContent = glFmtVar(val, v);
+        const em = document.createElement('em');
+        em.textContent = unitStr;
+        out.appendChild(em);
+    }
 }
 
 function glWireChip(sim, host, v) {
@@ -547,7 +553,11 @@ function glRender(sim, syncChips, opts) {
         m = cfg.model(Object.assign({}, glState), { prev: glPrevState, base: glSnapshot }) || {};
     } catch (err) {
         // A model that throws must not blank the whole screen mid-drag.
-        overlay.innerHTML = `<div class="gl-error">${tEngine('gl.renderError', 'Could not draw this diagram — reset and try again.')}</div>`;
+        const errDiv = document.createElement('div');
+        errDiv.className = 'gl-error';
+        errDiv.textContent = tEngine('gl.renderError', 'Could not draw this diagram — reset and try again.');
+        overlay.innerHTML = '';
+        overlay.appendChild(errDiv);
         if (typeof console !== 'undefined') console.error('[graphlab]', sim.id, err);
         return;
     }
@@ -652,7 +662,15 @@ function glRender(sim, syncChips, opts) {
 
     if (Array.isArray(m.formulas)) {
         const fb = document.getElementById('formula-body');
-        if (fb) fb.innerHTML = m.formulas.map(f => `<div class="formula-line">${typeof translateReadings === 'function' ? translateReadings(sim, f) : f}</div>`).join('');
+        if (fb) {
+            fb.textContent = '';
+            m.formulas.forEach(f => {
+                const line = document.createElement('div');
+                line.className = 'formula-line';
+                line.textContent = typeof translateReadings === 'function' ? translateReadings(sim, f) : f;
+                fb.appendChild(line);
+            });
+        }
     }
 
     if (typeof refreshChallenge === 'function') refreshChallenge(sim, m.metrics);
@@ -693,7 +711,14 @@ function glRenderScenarios(sim, panel) {
     header.dataset.panelKey = 'controls';
     header.setAttribute('role', 'button');
     header.setAttribute('tabindex', '0');
-    header.innerHTML = `<span>${tEngine('gl.scenarios', '🎬 Textbook Scenarios')}</span><span class="panel-chevron" aria-hidden="true">⌄</span>`;
+    const headerTitle = document.createElement('span');
+    headerTitle.textContent = tEngine('gl.scenarios', '🎬 Textbook Scenarios');
+    const headerChevron = document.createElement('span');
+    headerChevron.className = 'panel-chevron';
+    headerChevron.setAttribute('aria-hidden', 'true');
+    headerChevron.textContent = '⌄';
+    header.appendChild(headerTitle);
+    header.appendChild(headerChevron);
     panel.appendChild(header);
 
     const hint = document.createElement('p');
@@ -709,7 +734,16 @@ function glRenderScenarios(sim, panel) {
         btn.className = 'gl-scenario-btn';
         const label = hiPath(sim, `graphLab.scenarios.${i}.label`) || sc.label;
         const note = hiPath(sim, `graphLab.scenarios.${i}.note`) || sc.note || '';
-        btn.innerHTML = `<span class="gl-scenario-label">${glEsc(label)}</span>${note ? `<span class="gl-scenario-note">${glEsc(note)}</span>` : ''}`;
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'gl-scenario-label';
+        labelSpan.textContent = label;
+        btn.appendChild(labelSpan);
+        if (note) {
+            const noteSpan = document.createElement('span');
+            noteSpan.className = 'gl-scenario-note';
+            noteSpan.textContent = note;
+            btn.appendChild(noteSpan);
+        }
         const applyScenario = () => {
             const from = glDisplayedState();
             (sim.graphLab.vars || []).forEach(v => { glState[v.id] = v.value; });
