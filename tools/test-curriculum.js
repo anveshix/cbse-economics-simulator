@@ -456,7 +456,8 @@ function approx(a, b, eps, label) { return ok(Math.abs(a - b) < eps, `${label} (
 // from which OTHER sectors happen to be active) — see
 // docs/economics/models/circular-flow.md.
 function extractNodePos(html, label) {
-    const re = new RegExp(`<circle cx="([\\d.]+)" cy="([\\d.]+)"[^>]*><\\/circle>\\s*<text[^>]*>[^<]*<\\/text>\\s*<text[^>]*>${label}<\\/text>`);
+    const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`<circle cx="([\\d.]+)" cy="([\\d.]+)"[^>]*><\\/circle>\\s*<text[^>]*>[^<]*<\\/text>\\s*<text[^>]*>${escapedLabel}<\\/text>`);
     const m = html.match(re);
     return m ? { x: parseFloat(m[1]), y: parseFloat(m[2]) } : null;
 }
@@ -484,8 +485,8 @@ function extractNodePos(html, label) {
 
     // The actual bug: Financial Market's anchor must be IDENTICAL whether
     // or not Foreign Sector also happens to be on screen.
-    const bank3 = extractNodePos(html3bank, 'Financial Market \\(Banks\\)');
-    const bank4 = extractNodePos(html4bank, 'Financial Market \\(Banks\\)');
+    const bank3 = extractNodePos(html3bank, 'Financial Market (Banks)');
+    const bank4 = extractNodePos(html4bank, 'Financial Market (Banks)');
     ok(bank3 && bank4, 'Circular Flow: Financial Market node is present with the bank ON in both 3- and 4-sector');
     approx(bank3.x, bank4.x, 0.01, 'Circular Flow: Financial Market.x does NOT move when Foreign Sector is added (the regression this guards)');
     approx(bank3.y, bank4.y, 0.01, 'Circular Flow: Financial Market.y does NOT move when Foreign Sector is added');
@@ -507,7 +508,7 @@ function extractNodePos(html, label) {
 
     // No two simultaneously-visible nodes may collide (a hard-coded anchor
     // typo could silently overlap two nodes at the same point).
-    const allNodes4 = ['Households', 'Firms', 'Government', 'Financial Market \\(Banks\\)', 'Foreign Sector']
+    const allNodes4 = ['Households', 'Firms', 'Government', 'Financial Market (Banks)', 'Foreign Sector']
         .map(l => ({ l, p: extractNodePos(html4bank, l) }));
     for (let i = 0; i < allNodes4.length; i++) {
         for (let j = i + 1; j < allNodes4.length; j++) {
@@ -516,6 +517,104 @@ function extractNodePos(html, label) {
             ok(dist > 60, `Circular Flow: ${allNodes4[i].l} and ${allNodes4[j].l} nodes do not overlap (distance ${dist.toFixed(0)})`);
         }
     }
+})();
+
+// ── Panel collapse (js/panel-collapse.js) ────────────────────────
+(function testPanelCollapseStorageAndErrors() {
+    const loadPanelCollapsed = vm.runInContext('loadPanelCollapsed', context);
+    const savePanelCollapsed = vm.runInContext('savePanelCollapsed', context);
+
+    const origLocalStorage = sandbox.localStorage;
+    const store = {};
+
+    // Mock functional localStorage
+    sandbox.localStorage = {
+        getItem: (k) => (k in store ? store[k] : null),
+        setItem: (k, v) => { store[k] = String(v); }
+    };
+
+    // 1. Normal retrieval
+    store['econsim-panel-test1'] = '1';
+    store['econsim-panel-test2'] = '0';
+    ok(loadPanelCollapsed('test1', false) === true, 'loadPanelCollapsed: returns true when stored value is "1"');
+    ok(loadPanelCollapsed('test2', true) === false, 'loadPanelCollapsed: returns false when stored value is "0"');
+
+    // 2. Default fallbacks when key is missing (getItem returns null)
+    ok(loadPanelCollapsed('missing', true) === true, 'loadPanelCollapsed: returns defaultCollapsed (true) when key missing');
+    ok(loadPanelCollapsed('missing', false) === false, 'loadPanelCollapsed: returns defaultCollapsed (false) when key missing');
+    ok(loadPanelCollapsed('missing', undefined) === false, 'loadPanelCollapsed: handles undefined defaultCollapsed correctly');
+
+    // 3. Error handling on load (e.g., private browsing / localStorage blocked)
+    sandbox.localStorage.getItem = () => { throw new Error('SecurityError: Access is denied'); };
+    ok(loadPanelCollapsed('test1', true) === true, 'loadPanelCollapsed: falls back to defaultCollapsed (true) when getItem throws');
+    ok(loadPanelCollapsed('test1', false) === false, 'loadPanelCollapsed: falls back to defaultCollapsed (false) when getItem throws');
+
+    // 4. Save behavior
+    let savedKey = null, savedVal = null;
+    sandbox.localStorage.setItem = (k, v) => { savedKey = k; savedVal = v; };
+    savePanelCollapsed('saveKey', true);
+    ok(savedKey === 'econsim-panel-saveKey' && savedVal === '1', 'savePanelCollapsed: saves "1" for collapsed=true');
+    savePanelCollapsed('saveKey', false);
+    ok(savedKey === 'econsim-panel-saveKey' && savedVal === '0', 'savePanelCollapsed: saves "0" for collapsed=false');
+
+    // 5. Error handling on save
+    sandbox.localStorage.setItem = () => { throw new Error('QuotaExceededError'); };
+    let saveThrew = false;
+    try {
+        savePanelCollapsed('saveKey', true);
+    } catch {
+        saveThrew = true;
+    }
+    ok(!saveThrew, 'savePanelCollapsed: safely catches storage errors when setItem throws');
+
+    // Restore original localStorage mock
+    sandbox.localStorage = origLocalStorage;
+})();
+
+(function testInitPanelCollapseDOM() {
+    const initPanelCollapse = vm.runInContext('initPanelCollapse', context);
+
+    function makeEl() {
+        const classes = new Set();
+        const attrs = {};
+        const listeners = {};
+        return {
+            classList: {
+                toggle: (cls, flag) => { flag ? classes.add(cls) : classes.delete(cls); },
+                contains: (cls) => classes.has(cls)
+            },
+            setAttribute: (k, v) => { attrs[k] = String(v); },
+            getAttribute: (k) => attrs[k],
+            dataset: {},
+            addEventListener: (evt, fn) => {
+                listeners[evt] = listeners[evt] || [];
+                listeners[evt].push(fn);
+            },
+            _trigger: (evt, eObj = {}) => {
+                (listeners[evt] || []).forEach(fn => fn(eObj));
+            },
+            _classes: classes,
+            _attrs: attrs
+        };
+    }
+
+    const panel = makeEl();
+    const header = makeEl();
+
+    initPanelCollapse(panel, header, 'domTestKey', true);
+    ok(panel._classes.has('collapsed'), 'initPanelCollapse: panel gets "collapsed" class when defaultCollapsed is true');
+    ok(header._attrs['aria-expanded'] === 'false', 'initPanelCollapse: header aria-expanded is "false" when collapsed');
+    ok(header.dataset.collapseWired === '1', 'initPanelCollapse: marks header dataset.collapseWired = "1"');
+
+    // Simulate click toggle
+    header._trigger('click');
+    ok(!panel._classes.has('collapsed'), 'initPanelCollapse: click toggle uncollapses panel');
+    ok(header._attrs['aria-expanded'] === 'true', 'initPanelCollapse: click toggle sets aria-expanded = "true"');
+
+    // Calling initPanelCollapse again on already wired header does not double wire
+    initPanelCollapse(panel, header, 'domTestKey', true);
+    header._trigger('click');
+    ok(panel._classes.has('collapsed'), 'initPanelCollapse: idempotency prevents duplicate listener stacking on second init call');
 })();
 
 // ── Shared transition layer (js/transition-layer.js) ─────────────
@@ -1433,6 +1532,29 @@ function extractNodePos(html, label) {
     });
 })();
 
+(function testFmtUtility() {
+    // Valid numbers with default d = 2
+    ok(fmt(12.3456) === '12.35', 'fmt: 12.3456 defaults to 2 decimal places "12.35"');
+    ok(fmt(12) === '12.00', 'fmt: integer 12 defaults to "12.00"');
+    ok(fmt(0) === '0.00', 'fmt: 0 defaults to "0.00"');
+    ok(fmt(-5.1) === '-5.10', 'fmt: negative -5.1 defaults to "-5.10"');
+
+    // Valid numbers with specified d
+    ok(fmt(12.3456, 0) === '12', 'fmt: 12.3456 formatted to 0 decimals is "12"');
+    ok(fmt(12.3456, 1) === '12.3', 'fmt: 12.3456 formatted to 1 decimal is "12.3"');
+    ok(fmt(12.3456, 3) === '12.346', 'fmt: 12.3456 formatted to 3 decimals is "12.346"');
+
+    // Non-numeric / non-finite inputs
+    ok(fmt(NaN) === '—', 'fmt: NaN returns "—"');
+    ok(fmt(Infinity) === '—', 'fmt: Infinity returns "—"');
+    ok(fmt(-Infinity) === '—', 'fmt: -Infinity returns "—"');
+    ok(fmt("12.34") === '—', 'fmt: string "12.34" returns "—"');
+    ok(fmt(null) === '—', 'fmt: null returns "—"');
+    ok(fmt(undefined) === '—', 'fmt: undefined returns "—"');
+    ok(fmt({}) === '—', 'fmt: object returns "—"');
+    ok(fmt(true) === '—', 'fmt: boolean true returns "—"');
+})();
+
 (function testCentralTendency() {
     const sim = findSim('stats-central-tendency');
     const rows = [{ label: 'a', value: 2 }, { label: 'b', value: 4 }, { label: 'c', value: 4 }, { label: 'd', value: 6 }];
@@ -1669,6 +1791,82 @@ SIMS.forEach(sim => {
 });
 console.log(`\nQuiz bank coverage: ${quizBankCoverage} / ${SIMS.length} sims have a quiz bank generating >=10 questions.`);
 
+(function testGenerateQuizTemplateErrorHandling() {
+    // Verifies that generateQuiz safely catches errors thrown during template
+    // application across all simulation modes (compute, graphlab, datalab, customRender)
+    // without crashing, skipping faulty templates while keeping valid questions.
+    const staticQ = {
+        level: 'remember',
+        question: { en: 'Static Q', hi: 'Static Q' },
+        options: [{ en: 'A', hi: 'A' }, { en: 'B', hi: 'B' }],
+        correctIndex: 0,
+        explain: { en: 'Exp', hi: 'Exp' }
+    };
+
+    // 1. Simulator mode with compute()
+    const simCompute = {
+        id: 'test-err-compute',
+        mode: 'simulator',
+        controls: [{ id: 'p', min: 0, max: 10, step: 1, value: 5 }],
+        compute: () => ({ metrics: { val: 10 } })
+    };
+    QUIZ_BANK['test-err-compute'] = {
+        static: [staticQ],
+        applyTemplates: [
+            { level: 'apply', build: () => { throw new Error('Faulty compute template'); } },
+            { level: 'apply', build: () => ({ question: 'Valid Q', options: ['1', '2'], correctIndex: 0, explain: 'Valid Exp' }) }
+        ]
+    };
+    let qCompute = generateQuiz(simCompute, 2);
+    ok(Array.isArray(qCompute) && qCompute.length > 0, 'generateQuiz: returns questions when compute template throws');
+    ok(qCompute.some(q => q.question === 'Valid Q'), 'generateQuiz: includes valid template questions despite a faulty compute template');
+
+    // 2. GraphLab mode
+    const simGraphLab = {
+        id: 'test-err-graphlab',
+        mode: 'graphlab',
+        graphLab: {
+            vars: [{ id: 'x', min: 0, max: 10, step: 1, value: 5 }],
+            model: () => { throw new Error('GraphLab model failed'); }
+        }
+    };
+    QUIZ_BANK['test-err-graphlab'] = {
+        static: [staticQ],
+        applyTemplates: [{ level: 'apply', build: () => ({ question: 'GL Q', options: ['A', 'B'], correctIndex: 0, explain: 'E' }) }]
+    };
+    let qGraphLab = generateQuiz(simGraphLab, 1);
+    ok(Array.isArray(qGraphLab) && qGraphLab.length > 0, 'generateQuiz: handles GraphLab model throw gracefully');
+
+    // 3. DataLab mode
+    const simDataLab = {
+        id: 'test-err-datalab',
+        mode: 'datalab',
+        dataLab: {
+            defaultRows: [{ a: 1 }],
+            calculate: () => { throw new Error('DataLab calculate failed'); }
+        }
+    };
+    QUIZ_BANK['test-err-datalab'] = {
+        static: [staticQ],
+        applyTemplates: [{ level: 'apply', build: () => ({ question: 'DL Q', options: ['A', 'B'], correctIndex: 0, explain: 'E' }) }]
+    };
+    let qDataLab = generateQuiz(simDataLab, 1);
+    ok(Array.isArray(qDataLab) && qDataLab.length > 0, 'generateQuiz: handles DataLab calculate throw gracefully');
+
+    // 4. customRender mode
+    const simCustomRender = {
+        id: 'test-err-customrender',
+        mode: 'simulator',
+        customRender: () => { throw new Error('customRender failed'); }
+    };
+    QUIZ_BANK['test-err-customrender'] = {
+        static: [staticQ],
+        applyTemplates: [{ level: 'apply', build: () => ({ question: 'CR Q', options: ['A', 'B'], correctIndex: 0, explain: 'E' }) }]
+    };
+    let qCustomRender = generateQuiz(simCustomRender, 1);
+    ok(Array.isArray(qCustomRender) && qCustomRender.length > 0, 'generateQuiz: handles customRender throw gracefully');
+})();
+
 // ── 6. Hindi (i18n) content validation ────────────────────────────
 // Every sim's SIM_I18N_HI['<id>'] entry (js/i18n_hi*.js), when present, is
 // checked structurally against its own SIMS shape — every translated
@@ -1854,6 +2052,29 @@ Object.keys(READINGS_I18N_HI).forEach(simId => {
         (r.stats || []).forEach(s => { englishHTMLs.push(String(s.label)); englishHTMLs.push(String(s.value)); });
         if (r.interpretation) englishHTMLs.push(r.interpretation);
         (r.formulas || []).forEach(f => englishHTMLs.push(f));
+    } else if (sim.mode === 'graphlab' && sim.graphLab) {
+        const cfg = sim.graphLab;
+        const base = {};
+        cfg.vars.forEach(v => { base[v.id] = v.value; });
+        cfg.vars.forEach(sweepVar => {
+            const n = Math.min(24, Math.max(3, Math.round((sweepVar.max - sweepVar.min) / sweepVar.step)));
+            for (let i = 0; i <= n; i++) {
+                const val = sweepVar.min + ((sweepVar.max - sweepVar.min) * i) / n;
+                const state = Object.assign({}, base, { [sweepVar.id]: val });
+                const m = cfg.model(state, { prev: base, base });
+                if (Array.isArray(m.readings)) {
+                    m.readings.forEach(r => {
+                        if (r) {
+                            englishHTMLs.push(String(r.label));
+                            englishHTMLs.push(String(r.value));
+                        }
+                    });
+                } else if (typeof m.readings === 'string') {
+                    englishHTMLs.push(m.readings);
+                }
+                (m.formulas || []).forEach(f => englishHTMLs.push(f));
+            }
+        });
     } else if (typeof sim.compute === 'function') {
         const base = collectDefaults(sim);
         (sim.controls || []).forEach(control => {
@@ -1871,8 +2092,8 @@ Object.keys(READINGS_I18N_HI).forEach(simId => {
 
     englishHTMLs.forEach((html, i) => {
         const translated = translateReadings(sim, html);
-        pairs.forEach(([en]) => {
-            if (html.indexOf(en) !== -1) {
+        pairs.forEach(([en, hi]) => {
+            if (en !== hi && html.indexOf(en) !== -1) {
                 readingsPatternsChecked++;
                 ok(translated.indexOf(en) === -1, `${simId}: swept output[${i}] no longer contains English readings pattern ${JSON.stringify(en)} after translateReadings()`);
             }

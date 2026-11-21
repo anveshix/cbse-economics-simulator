@@ -314,6 +314,15 @@ let suppressNextWhatChanged = true;
 // loop for every simulator-mode sim at once.
 let prevSimResult = null;
 
+let cachedControlsPanel = null;
+
+function getControlsPanel() {
+    if (!cachedControlsPanel || !cachedControlsPanel.isConnected) {
+        cachedControlsPanel = document.getElementById('controls-panel');
+    }
+    return cachedControlsPanel;
+}
+
 function clamp(v, min, max) {
     return Math.min(max, Math.max(min, v));
 }
@@ -515,45 +524,69 @@ function renderQuickCheck(sim, qc, host) {
     if (!host) return;
     const question = hiPath(sim, 'tlm.quickCheck.question') || qc.question;
     const options = qc.options.map((o, i) => hiPath(sim, `tlm.quickCheck.options.${i}`) || o);
-    host.innerHTML = `
-        <p class="tlm-qc-question">${question}</p>
-        <div class="tlm-qc-options">
-            ${options.map((o, i) => `<button type="button" class="tlm-qc-btn" data-i="${i}">${o}</button>`).join('')}
-        </div>
-        <div class="tlm-qc-feedback hidden" id="tlm-qc-feedback"></div>
-    `;
+
+    host.textContent = '';
+
+    const qEl = document.createElement('p');
+    qEl.className = 'tlm-qc-question';
+    qEl.textContent = question;
+    host.appendChild(qEl);
+
+    const optsDiv = document.createElement('div');
+    optsDiv.className = 'tlm-qc-options';
+    options.forEach((o, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tlm-qc-btn';
+        btn.dataset.i = String(i);
+        btn.textContent = o;
+        optsDiv.appendChild(btn);
+    });
+    host.appendChild(optsDiv);
+
+    const feedback = document.createElement('div');
+    feedback.className = 'tlm-qc-feedback hidden';
+    feedback.id = 'tlm-qc-feedback';
+    host.appendChild(feedback);
+
     let answered = false;
-    host.querySelectorAll('.tlm-qc-btn').forEach(btn => {
+    optsDiv.querySelectorAll('.tlm-qc-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             if (answered) return;
             answered = true;
             const i = Number(btn.dataset.i);
             const correct = i === qc.correctIndex;
-            host.querySelectorAll('.tlm-qc-btn').forEach((b, bi) => {
+            optsDiv.querySelectorAll('.tlm-qc-btn').forEach((b, bi) => {
                 b.disabled = true;
                 if (bi === qc.correctIndex) b.classList.add('tlm-qc-btn--correct');
                 else if (bi === i) b.classList.add('tlm-qc-btn--wrong');
             });
-            const feedback = document.getElementById('tlm-qc-feedback');
-            if (feedback) {
-                feedback.classList.remove('hidden');
-                const explain = hiPath(sim, 'tlm.quickCheck.explain') || qc.explain || '';
-                const prefix = correct
-                    ? tEngine('quiz.correct', '✅ Correct!')
-                    : tEngine('quiz.incorrect', '❌ Not quite.');
-                feedback.innerHTML = `<b>${prefix}</b> ${explain}`;
-            }
+            const feedbackEl = document.getElementById('tlm-qc-feedback') || feedback;
+            feedbackEl.classList.remove('hidden');
+            const explain = hiPath(sim, 'tlm.quickCheck.explain') || qc.explain || '';
+            const prefix = correct
+                ? tEngine('quiz.correct', '✅ Correct!')
+                : tEngine('quiz.incorrect', '❌ Not quite.');
+
+            feedbackEl.textContent = '';
+            const bold = document.createElement('b');
+            bold.textContent = prefix;
+            feedbackEl.appendChild(bold);
+            feedbackEl.appendChild(document.createTextNode(' ' + explain));
         });
     });
 }
 
 function buildControls(sim) {
-    const panel = document.getElementById('controls-panel');
+    const panel = getControlsPanel();
     if (!panel) return;
-    panel.innerHTML = '';
+    panel.textContent = '';
 
     if (!sim.controls || !sim.controls.length) {
-        panel.innerHTML = `<p class="empty-hint">${tEngine('engine.noInputs', 'No adjustable inputs for this lab — explore the chart on the left.')}</p>`;
+        const hintP = document.createElement('p');
+        hintP.className = 'empty-hint';
+        hintP.textContent = tEngine('engine.noInputs', 'No adjustable inputs for this lab — explore the chart on the left.');
+        panel.appendChild(hintP);
         return;
     }
 
@@ -562,7 +595,10 @@ function buildControls(sim) {
     header.dataset.panelKey = 'controls';
     header.setAttribute('role', 'button');
     header.setAttribute('tabindex', '0');
-    header.innerHTML = `<span>${tEngine('engine.adjustVariables', '🎛️ Adjust the Variables')}</span>`;
+
+    const headerSpan = document.createElement('span');
+    headerSpan.textContent = tEngine('engine.adjustVariables', '🎛️ Adjust the Variables');
+    header.appendChild(headerSpan);
 
     const hint = document.createElement('p');
     hint.className = 'controls-panel-hint';
@@ -571,7 +607,7 @@ function buildControls(sim) {
     const resetBtn = document.createElement('button');
     resetBtn.type = 'button';
     resetBtn.className = 'reset-btn';
-    resetBtn.innerHTML = tEngine('engine.reset', '↺ Reset');
+    resetBtn.textContent = tEngine('engine.reset', '↺ Reset');
     // Reset sits inside the same header that toggles collapse (a bigger,
     // more ergonomic click target than a chevron alone) — stop the click
     // from bubbling up and also toggling the panel collapsed/expanded.
@@ -638,14 +674,22 @@ function buildControls(sim) {
             // ~200px grid column, so it spans the full compact-controls
             // grid width (see .control-row--wide in css/styles.css).
             row.classList.add('control-row--wide');
-            row.innerHTML = `
-                <div class="control-label-row">
-                    <label>${label}</label>
-                </div>
-                <div class="control-segmented" id="ctl-${c.id}" role="group" aria-label="${label}"></div>
-            `;
+
+            const labelRow = document.createElement('div');
+            labelRow.className = 'control-label-row';
+            const labelEl = document.createElement('label');
+            labelEl.textContent = label;
+            labelRow.appendChild(labelEl);
+
+            const group = document.createElement('div');
+            group.className = 'control-segmented';
+            group.id = `ctl-${c.id}`;
+            group.setAttribute('role', 'group');
+            group.setAttribute('aria-label', label);
+
+            row.appendChild(labelRow);
+            row.appendChild(group);
             panel.appendChild(row);
-            const group = row.querySelector('.control-segmented');
             c.options.forEach(opt => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
@@ -671,20 +715,49 @@ function buildControls(sim) {
 
         const label = controlLabel(sim, c);
         const unit = hiPath(sim, `controls.${c.id}.unit`) || localUnit(c.unit);
-        row.innerHTML = `
-            <div class="control-label-row">
-                <label for="ctl-${c.id}">${label}</label>
-                ${unit ? `<span class="control-unit">${unit}</span>` : ''}
-            </div>
-            <div class="control-input-group">
-                <input type="range" id="ctl-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}">
-                <input type="number" id="ctl-${c.id}-num" class="control-number" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}" aria-label="${label} (${tEngine('engine.exactValue', 'exact value')})">
-            </div>
-        `;
-        panel.appendChild(row);
 
-        const rangeEl = row.querySelector('input[type="range"]');
-        const numEl = row.querySelector('input[type="number"]');
+        const labelRow = document.createElement('div');
+        labelRow.className = 'control-label-row';
+
+        const labelEl = document.createElement('label');
+        labelEl.htmlFor = `ctl-${c.id}`;
+        labelEl.textContent = label;
+        labelRow.appendChild(labelEl);
+
+        if (unit) {
+            const unitSpan = document.createElement('span');
+            unitSpan.className = 'control-unit';
+            unitSpan.textContent = unit;
+            labelRow.appendChild(unitSpan);
+        }
+
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'control-input-group';
+
+        const rangeEl = document.createElement('input');
+        rangeEl.type = 'range';
+        rangeEl.id = `ctl-${c.id}`;
+        rangeEl.min = c.min;
+        rangeEl.max = c.max;
+        rangeEl.step = c.step;
+        rangeEl.value = c.value;
+
+        const numEl = document.createElement('input');
+        numEl.type = 'number';
+        numEl.id = `ctl-${c.id}-num`;
+        numEl.className = 'control-number';
+        numEl.min = c.min;
+        numEl.max = c.max;
+        numEl.step = c.step;
+        numEl.value = c.value;
+        numEl.setAttribute('aria-label', `${label} (${tEngine('engine.exactValue', 'exact value')})`);
+
+        inputGroup.appendChild(rangeEl);
+        inputGroup.appendChild(numEl);
+
+        row.appendChild(labelRow);
+        row.appendChild(inputGroup);
+        panel.appendChild(row);
 
         // Dragging the slider always stays within bounds (native behaviour).
         rangeEl.addEventListener('input', () => {
@@ -814,7 +887,7 @@ function checkPredictReveal(sim, result) {
 // control that's relevant to more than one, but not all, of the select's
 // options — e.g. shown for both '3-sector' and '4-sector' but not '2').
 function applyControlVisibility(sim) {
-    const panel = document.getElementById('controls-panel');
+    const panel = getControlsPanel();
     if (!panel) return;
     panel.querySelectorAll('.control-row[data-show-when-id]').forEach(row => {
         const allowed = row.dataset.showWhenEquals.split(',');
@@ -923,7 +996,13 @@ function renderSimChart(sim) {
     if (Array.isArray(result.formulas)) {
         const formulaBody = document.getElementById('formula-body');
         if (formulaBody) {
-            formulaBody.innerHTML = result.formulas.map(f => `<div class="formula-line">${translateReadings(sim, f)}</div>`).join('');
+            formulaBody.textContent = '';
+            result.formulas.forEach(f => {
+                const line = document.createElement('div');
+                line.className = 'formula-line';
+                line.textContent = translateReadings(sim, f);
+                formulaBody.appendChild(line);
+            });
         }
     }
 
@@ -995,9 +1074,13 @@ function renderSim(sim) {
     }
     if (formulaBody) {
         const formulas = hiPath(sim, 'formulas') || sim.formulas || [];
-        formulaBody.innerHTML = formulas
-            .map(f => `<div class="formula-line">${f}</div>`)
-            .join('');
+        formulaBody.textContent = '';
+        formulas.forEach(f => {
+            const line = document.createElement('div');
+            line.className = 'formula-line';
+            line.textContent = f;
+            formulaBody.appendChild(line);
+        });
     }
     // Charts render into #sim-dom-overlay via Plotly; the raw canvas
     // underneath isn't used by any simulation, so keep it out of the way.
@@ -1032,15 +1115,15 @@ function renderSim(sim) {
         // other modes it is cleared by the Graph Lab engine itself.
         renderGraphLab(sim);
     } else if (sim.mode === 'datalab' && typeof renderDataLab === 'function') {
-        const panel = document.getElementById('controls-panel');
+        const panel = getControlsPanel();
         if (panel) { panel.innerHTML = ''; panel.classList.remove('hidden'); }
         renderDataLab(sim, overlay);
     } else if (sim.mode === 'explorer' && typeof renderExplorer === 'function') {
-        const panel = document.getElementById('controls-panel');
+        const panel = getControlsPanel();
         if (panel) { panel.innerHTML = ''; panel.classList.remove('hidden'); }
         renderExplorer(sim, overlay);
     } else {
-        const panel = document.getElementById('controls-panel');
+        const panel = getControlsPanel();
         if (panel) panel.classList.remove('hidden');
         buildControls(sim);
         renderSimChart(sim);

@@ -25,7 +25,20 @@
       errorDiv.style.fontSize = '12px';
       errorDiv.style.fontFamily = 'monospace';
       errorDiv.style.whiteSpace = 'pre-wrap';
-      errorDiv.innerHTML = '<b>JS Error:</b> ' + e.message + ' at ' + e.filename + ':' + e.lineno + ':' + e.colno + '<br><small>' + (e.error ? e.error.stack : '') + '</small>';
+      errorDiv.style.pointerEvents = 'none';
+      const titleB = document.createElement('b');
+      titleB.textContent = 'JS Error: ';
+      const msgText = document.createTextNode(
+        (e.message || 'Unknown error') + ' at ' + (e.filename || '') + ':' + (e.lineno || 0) + ':' + (e.colno || 0)
+      );
+      errorDiv.appendChild(titleB);
+      errorDiv.appendChild(msgText);
+      if (e.error && e.error.stack) {
+        errorDiv.appendChild(document.createElement('br'));
+        const small = document.createElement('small');
+        small.textContent = e.error.stack;
+        errorDiv.appendChild(small);
+      }
       document.body.appendChild(errorDiv);
     });
   </script>
@@ -44,7 +57,7 @@
   </div>
   <div class="nav-center" id="nav-breadcrumb"></div>
   <div class="nav-right">
-    <button id="lang-toggle" onclick="toggleLanguage()" class="icon-btn" style="width:auto;padding:0 12px;font-size:12px;font-weight:600;margin-right:8px;border-radius:12px;background:rgba(255,255,255,0.08);color:var(--text1);border:1px solid var(--border2);">EN</button>
+    <button id="lang-toggle" onclick="toggleLanguage()" class="icon-btn lang-toggle-btn">EN</button>
     <div class="xp-chip">
       <span class="xp-star">⭐</span>
       <span id="nav-xp">0 XP</span>

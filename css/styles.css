@@ -1,48 +1,51 @@
 /* ══════════════════════════════════════════════════════════════
-   EconSim Pro — Glassmorphism Design System
-   Frosted-glass panels over a colorful animated gradient backdrop,
-   with a distinct accent per module (Micro / Macro / Stats / India).
+   EconSim Pro — Editorial Learning Studio Design System
+   Crisp paper-white surfaces, hairline borders, tabular numerals,
+   and distinct module accents (Micro / Macro / Stats / India).
    ══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Base palette */
-  --bg: #f3f0ff;
-  --text1: #1e1b3a;
-  --text2: #4b4470;
-  --text3: #8b84ab;
-  --border1: rgba(30, 27, 58, 0.16);
-  --border2: rgba(30, 27, 58, 0.1);
+  /* Base palette — high-contrast editorial ink on warm alabaster */
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-subtle: #f1f5f9;
+  --text1: #0f172a;
+  --text2: #475569;
+  --text3: #64748b;
+  --border1: rgba(15, 23, 42, 0.14);
+  --border2: rgba(15, 23, 42, 0.08);
 
-  /* Glass surface tokens */
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-bg-strong: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.6);
-  --glass-shadow: 0 8px 32px rgba(76, 29, 149, 0.14), 0 2px 8px rgba(76, 29, 149, 0.08);
-  --glass-blur: 18px;
+  /* Crisp surface tokens (replaces heavy frosted-glass) */
+  --glass-bg: rgba(255, 255, 255, 0.92);
+  --glass-bg-strong: #ffffff;
+  --glass-border: rgba(15, 23, 42, 0.09);
+  --glass-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 6px 18px rgba(15, 23, 42, 0.04);
+  --glass-blur: 10px;
 
-  --card-bg: var(--glass-bg-strong);
-  --primary: #6366f1;
-  --primary-2: #8b5cf6;
+  --card-bg: var(--surface);
+  --primary: #4f46e5;
+  --primary-2: #6366f1;
 
-  /* Module accent gradients */
-  --micro-a: #6366f1;
-  --micro-b: #a855f7;
+  /* Module accents */
+  --micro-a: #4f46e5;
+  --micro-b: #6366f1;
   --micro-grad: linear-gradient(135deg, var(--micro-a), var(--micro-b));
 
-  --macro-a: #10b981;
-  --macro-b: #14b8a6;
+  --macro-a: #059669;
+  --macro-b: #10b981;
   --macro-grad: linear-gradient(135deg, var(--macro-a), var(--macro-b));
 
-  --stats-a: #f59e0b;
-  --stats-b: #f97316;
+  --stats-a: #d97706;
+  --stats-b: #f59e0b;
   --stats-grad: linear-gradient(135deg, var(--stats-a), var(--stats-b));
 
-  --india-a: #f43f5e;
-  --india-b: #d946ef;
+  --india-a: #e11d48;
+  --india-b: #f43f5e;
   --india-grad: linear-gradient(135deg, var(--india-a), var(--india-b));
 
   /* Typography / motion tokens */
   --font-display: 'Sora', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -70,20 +73,40 @@ h1, h2, h3,
   letter-spacing: -0.01em;
 }
 
-/* ── Colorful animated mesh backdrop ─────────────────────────── */
+/* ── Subtle editorial paper backdrop ─────────────────────────── */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(circle at 12% 18%, rgba(99, 102, 241, 0.35), transparent 42%),
-    radial-gradient(circle at 85% 12%, rgba(244, 63, 94, 0.28), transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.30), transparent 45%),
-    radial-gradient(circle at 15% 85%, rgba(245, 158, 11, 0.25), transparent 42%),
-    radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.18), transparent 60%);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(79, 70, 229, 0.05), transparent),
+    linear-gradient(to bottom, #ffffff 0%, var(--bg) 100%);
   background-color: var(--bg);
-  animation: mesh-drift 26s ease-in-out infinite alternate;
+}
+
+.lang-toggle-btn {
+  width: auto !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  margin-right: 8px;
+  border-radius: 10px !important;
+  background: var(--surface) !important;
+  color: var(--text1) !important;
+  border: 1px solid var(--border1) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.lang-toggle-btn:hover {
+  background: var(--surface-subtle) !important;
+}
+
+.reading-row b,
+.xp-chip,
+.formula-line,
+.datalab-table td,
+.gl-val {
+  font-variant-numeric: tabular-nums;
 }
 
 @keyframes mesh-drift {
