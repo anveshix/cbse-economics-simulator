@@ -301,6 +301,26 @@ function initApp() {
         wireCollapseAllToggle(document.getElementById('sim-collapse-toggle'), '.sim-right .info-card:not(.hidden)');
     }
 
+    const classFilterBar = document.getElementById('class-filter-bar');
+    if (classFilterBar) {
+        classFilterBar.addEventListener('click', e => {
+            const btn = e.target && e.target.closest('.class-filter-btn');
+            if (!btn) return;
+            const filter = btn.dataset.classFilter || 'all';
+            classFilterBar.querySelectorAll('.class-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+            const show11 = filter === 'all' || filter === '11';
+            const show12 = filter === 'all' || filter === '12';
+            const modStats = document.getElementById('module-stats');
+            const modMicro = document.getElementById('module-micro');
+            const modMacro = document.getElementById('module-macro');
+            const modIndia = document.getElementById('module-india');
+            if (modStats) modStats.classList.toggle('hidden', !show11);
+            if (modMicro) modMicro.classList.toggle('hidden', !show11);
+            if (modMacro) modMacro.classList.toggle('hidden', !show12);
+            if (modIndia) modIndia.classList.toggle('hidden', !show12);
+        });
+    }
+
     // Attach back button behaviors
     const backBtnIndex = document.getElementById('sim-back');
     if (backBtnIndex) {
