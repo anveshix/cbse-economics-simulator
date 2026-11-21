@@ -1034,6 +1034,45 @@ function renderSimChart(sim) {
     prevSimResult = { traces: (result.traces || []).slice(), metrics: Object.assign({}, result.metrics) };
 }
 
+function getExamBridgeTraps(sim, isHi) {
+    const id = (sim && sim.id) || '';
+    const mod = (sim && sim.module) || '';
+    const specific = {
+        'keynesian-multiplier': isHi
+            ? '⚠️ परीक्षक चेतावनी: k = 1/(1 - MPC) = 1/MPS। यदि MPC = 0.8 दिया है, तो पहले MPS = 0.2 निकालें, फिर k = 5 और ΔY = k × ΔI लिखें।'
+            : '⚠️ Examiner Trap: Always show k = 1/(1 − MPC) = 1/MPS first. If MPC = 0.8, explicitly write MPS = 0.2 → k = 5 → ΔY = k × ΔI.',
+        'ad-as-equilibrium': isHi
+            ? '⚠️ परीक्षक चेतावनी: यदि AD > AS है, तो अनियोजित मालसूची (unplanned inventory) घटती है और उत्पादक उत्पादन बढ़ाते हैं जब तक AD = AS न हो जाए।'
+            : '⚠️ Examiner Trap: When AD > AS, explicitly state that unplanned inventories fall, prompting firms to expand output until AD = AS.',
+        'money-banking-credit': isHi
+            ? '⚠️ परीक्षक चेतावनी: कुल साख सृजन = प्रारंभिक जमा × (1/LRR)। LRR को दशमलव या प्रतिशत में सही बदलें (जैसे 20% = 0.20 → गुणक = 5)।'
+            : '⚠️ Examiner Trap: Total Credit = Initial Deposit × (1/LRR). Convert LRR % carefully (e.g., 20% = 0.20 → Money Multiplier = 5).',
+        'circular-flow': isHi
+            ? '⚠️ परीक्षक चेतावनी: वास्तविक प्रवाह (वस्तुएँ एवं सेवाएँ) और मौद्रिक प्रवाह (कारक भुगतान एवं उपभोग व्यय) के बीच अंतर स्पष्ट रूप से लिखें।'
+            : '⚠️ Examiner Trap: Clearly distinguish Real Flow (goods & factor services) from Money Flow (factor payments & consumption expenditure).',
+        'elasticity-demand': isHi
+            ? '⚠️ परीक्षक चेतावनी: मांग की कीमत लोच (Ed) में ऋणात्मक चिह्न (-) केवल कीमत और मात्रा के विपरीत संबंध को दर्शाता है; तुलना के लिए निरपेक्ष मान लें।'
+            : '⚠️ Examiner Trap: The minus sign in Ed = (−) %ΔQ/%ΔP shows inverse relation; always use the absolute value when comparing elasticity.',
+        'supply-demand': isHi
+            ? '⚠️ परीक्षक चेतावनी: वस्तु की अपनी कीमत बदलने पर "मांग में विस्तार/संकुचन" (वक्र पर संचलन) होता है, जबकि अन्य कारकों से "मांग में वृद्धि/कमी" (वक्र का खिसकाव) होता है।'
+            : '⚠️ Examiner Trap: Own-price change causes Movement (Extension/Contraction); other determinants cause Shift (Increase/Decrease).'
+    };
+    if (specific[id]) return specific[id];
+    if (mod === 'stats') {
+        return isHi
+            ? '⚠️ परीक्षक चेतावनी: सांख्यिकी के प्रश्नों में सूत्र लिखना, मान प्रतिस्थापित करना और अंतिम उत्तर के साथ इकाई (unit) लिखना अनिवार्य है।'
+            : '⚠️ Examiner Trap: In Statistics, always write the formula first, show step-by-step substitution, and state the final unit.';
+    }
+    if (mod === 'india') {
+        return isHi
+            ? '⚠️ परीक्षक चेतावनी: भारतीय अर्थव्यवस्था के उत्तरों में वर्ष (जैसे 1950, 1991), नीति का नाम और आँकड़ों/तथ्यों का उल्लेख अवश्य करें।'
+            : '⚠️ Examiner Trap: In Indian Economic Development, anchor every point with exact years (e.g., 1950, 1991), policy names, and data.' ;
+    }
+    return isHi
+        ? '⚠️ परीक्षक चेतावनी: वक्र के साथ संचलन (Movement) और वक्र के खिसकाव (Shift) को कभी न मिलाएँ; अक्षों पर इकाइयाँ अवश्य लिखें।'
+        : '⚠️ Examiner Trap: Never confuse Movement along a curve with Shift of a curve; always label both axes with units.';
+}
+
 function renderExamBridge(sim) {
     const body = document.getElementById('exam-bridge-body');
     if (!body || !sim) return;
@@ -1042,25 +1081,27 @@ function renderExamBridge(sim) {
     const isHi = typeof currentLang !== 'undefined' && currentLang === 'hi';
     const title = (typeof simField === 'function' ? simField(sim, 'title') : sim.title) || '';
     const keyIdea = (typeof simField === 'function' ? simField(sim, 'keyIdea') : sim.keyIdea) || '';
+    const formulas = Array.isArray(sim.formulas) ? sim.formulas : [];
+    const formulaText = formulas.length
+        ? formulas.map(f => (typeof translateReadings === 'function' ? translateReadings(sim, f) : f)).join('  |  ')
+        : (isHi ? 'प्रत्येक चर के बीच कारण-प्रभाव संबंध और आरेखीय संतुलन स्पष्ट करें।' : 'State the exact mathematical/diagrammatic relationship between the variables.');
 
     const steps = [
         {
-            heading: isHi ? '1. परिभाषा एवं अवधारणा (1–2 अंक)' : '1. Define & State Principle (1–2 Marks)',
+            heading: isHi ? '1. परिभाषा एवं मुख्य सिद्धांत (1–2 अंक)' : '1. NCERT Definition & Principle (1–2 Marks)',
             text: keyIdea || (isHi
                 ? `${title} की मानक NCERT परिभाषा लिखें और मुख्य मान्यताएँ स्पष्ट करें।`
                 : `State the standard NCERT definition of ${title} and list its key assumptions clearly.`)
         },
         {
-            heading: isHi ? '2. आरेख / अनुसूची (2–3 अंक)' : '2. Diagram / Schedule (2–3 Marks)',
-            text: isHi
-                ? 'अक्षों (X और Y) को इकाइयों सहित स्पष्ट रूप से नामांकित करें, प्रारंभिक और नए संतुलन बिंदु (E → E₁) दिखाएँ, और वक्र के खिसकाव या संचलन को तीर से दर्शाएँ।'
-                : 'Label both axes with units, mark the initial and new equilibrium points (E → E₁), and use arrows to show any curve shift or movement along the curve.'
+            heading: isHi ? '2. सूत्र एवं आरेखीय कार्यप्रणाली (2–3 अंक)' : '2. Formula & Diagrammatic Working (2–3 Marks)',
+            text: formulaText
         },
         {
-            heading: isHi ? '3. निष्कर्ष (1 अंक)' : '3. Exam Conclusion (1 Mark)',
+            heading: isHi ? '3. परीक्षा निष्कर्ष (1 अंक)' : '3. Board Exam Conclusion (1 Mark)',
             text: isHi
-                ? 'अंतिम परिणाम को कारण-प्रभाव के रूप में एक वाक्य में लिखें (जैसे: "अतः संतुलन आय बढ़ती है")।'
-                : 'Close with a crisp cause-and-effect sentence linking the variable change to the final equilibrium outcome.'
+                ? 'अंतिम परिणाम को कारण-प्रभाव के रूप में एक सटीक वाक्य में लिखें और संतुलन बिंदु (E → E₁) का उल्लेख करें।'
+                : 'Close with a crisp cause-and-effect sentence linking the variable change to the final equilibrium outcome (E → E₁).'
         }
     ];
 
@@ -1079,9 +1120,7 @@ function renderExamBridge(sim) {
 
     const trap = document.createElement('div');
     trap.className = 'exam-bridge-trap';
-    trap.textContent = isHi
-        ? '⚠️ परीक्षक की सामान्य चेतावनी: वक्र के साथ संचलन (Movement) और वक्र के खिसकाव (Shift) को कभी न मिलाएँ।'
-        : '⚠️ Examiner Trap: Never confuse a movement along a curve (price/own-variable change) with a shift of the curve (other-determinant change).';
+    trap.textContent = getExamBridgeTraps(sim, isHi);
     body.appendChild(trap);
 }
 
