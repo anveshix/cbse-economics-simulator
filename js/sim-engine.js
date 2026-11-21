@@ -1090,8 +1090,8 @@ function getExamBridgeTraps(sim, isHi) {
             ? '⚠️ परीक्षक चेतावनी: बढ़ती सीमांत अवसर लागत (MOC) के कारण PPC मूल बिंदु की ओर नतोदर (concave) होता है; संसाधन बढ़ने पर यह दाईं ओर खिसकता है।'
             : '⚠️ Examiner Trap: PPC is concave to the origin due to increasing Marginal Opportunity Cost (MOC); resource growth shifts PPC rightward.',
         'gl-ppc-drag': isHi
-            ? '⚠️ परीक्षक चेतावनी: PPC के अंदर का कोई भी बिंदु संसाधनों के अल्प-उपयोग (under-utilisation) को दर्शाता है, जबकि बाहर का बिंदु अप्राप्य (unattainable) है।'
-            : '⚠️ Examiner Trap: Any point inside the PPC shows under-utilisation of resources; any point outside is unattainable with current resources.',
+            ? '⚠️ परीक्षक चेतावनी: PPC के अंदर का कोई भी बिंदु संसाधनों के अल्प-उपयोग या अकुशल उपयोग (जैसे बेरोज़गारी) को दर्शाता है, जबकि बाहर का बिंदु अप्राप्य (unattainable) है।'
+            : '⚠️ Examiner Trap: Any point inside the PPC shows under-utilisation or inefficient use of resources (e.g., unemployment); any point outside is unattainable with current resources.',
         'gl-demand-movement-shift': isHi
             ? '⚠️ परीक्षक चेतावनी: अपनी कीमत बदलने पर वक्र पर संचलन (विस्तार/संकुचन) होता है; आय या संबंधित वस्तु की कीमत बदलने पर वक्र का खिसकाव (वृद्धि/कमी) होता है।'
             : '⚠️ Examiner Trap: Own-price change causes Movement (Extension/Contraction); income or related-good price change causes Shift (Increase/Decrease).',
