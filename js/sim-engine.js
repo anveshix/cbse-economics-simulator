@@ -1038,24 +1038,93 @@ function getExamBridgeTraps(sim, isHi) {
     const id = (sim && sim.id) || '';
     const mod = (sim && sim.module) || '';
     const specific = {
-        'keynesian-multiplier': isHi
-            ? '⚠️ परीक्षक चेतावनी: k = 1/(1 - MPC) = 1/MPS। यदि MPC = 0.8 दिया है, तो पहले MPS = 0.2 निकालें, फिर k = 5 और ΔY = k × ΔI लिखें।'
-            : '⚠️ Examiner Trap: Always show k = 1/(1 − MPC) = 1/MPS first. If MPC = 0.8, explicitly write MPS = 0.2 → k = 5 → ΔY = k × ΔI.',
-        'ad-as-equilibrium': isHi
-            ? '⚠️ परीक्षक चेतावनी: यदि AD > AS है, तो अनियोजित मालसूची (unplanned inventory) घटती है और उत्पादक उत्पादन बढ़ाते हैं जब तक AD = AS न हो जाए।'
-            : '⚠️ Examiner Trap: When AD > AS, explicitly state that unplanned inventories fall, prompting firms to expand output until AD = AS.',
-        'money-banking-credit': isHi
+        'macro-money-creation': isHi
             ? '⚠️ परीक्षक चेतावनी: कुल साख सृजन = प्रारंभिक जमा × (1/LRR)। LRR को दशमलव या प्रतिशत में सही बदलें (जैसे 20% = 0.20 → गुणक = 5)।'
             : '⚠️ Examiner Trap: Total Credit = Initial Deposit × (1/LRR). Convert LRR % carefully (e.g., 20% = 0.20 → Money Multiplier = 5).',
-        'circular-flow': isHi
-            ? '⚠️ परीक्षक चेतावनी: वास्तविक प्रवाह (वस्तुएँ एवं सेवाएँ) और मौद्रिक प्रवाह (कारक भुगतान एवं उपभोग व्यय) के बीच अंतर स्पष्ट रूप से लिखें।'
-            : '⚠️ Examiner Trap: Clearly distinguish Real Flow (goods & factor services) from Money Flow (factor payments & consumption expenditure).',
-        'elasticity-demand': isHi
+        'macro-govt-budget': isHi
+            ? '⚠️ परीक्षक चेतावनी: राजकोषीय घाटा = कुल व्यय − उधार को छोड़कर कुल प्राप्तियाँ; प्राथमिक घाटा = राजकोषीय घाटा − ब्याज भुगतान।'
+            : '⚠️ Examiner Trap: Fiscal Deficit = Total Expenditure − Total Receipts (excluding borrowings); Primary Deficit = Fiscal Deficit − Interest Payments.',
+        'macro-forex': isHi
+            ? '⚠️ परीक्षक चेतावनी: मुद्रा के मूल्यह्रास (Depreciation — बाजार द्वारा) और अवमूल्यन (Devaluation — सरकार द्वारा) को अलग-अलग लिखें।'
+            : '⚠️ Examiner Trap: Clearly distinguish Currency Depreciation (market-driven under flexible rate) from Devaluation (government-driven under fixed rate).',
+        'gl-forex-determination': isHi
+            ? '⚠️ परीक्षक चेतावनी: विदेशी मुद्रा की माँग और विनिमय दर में विपरीत संबंध होता है, जबकि पूर्ति और विनिमय दर में धनात्मक संबंध होता है।'
+            : '⚠️ Examiner Trap: Demand for forex slopes downward (inverse to exchange rate) while Supply slopes upward (direct relation).',
+        'macro-inflation-gap': isHi
+            ? '⚠️ परीक्षक चेतावनी: स्फीतिक अंतराल (AD > AS at full employment) को ठीक करने के लिए CRR/SLR/रेपो दर बढ़ाई जाती है और सरकारी व्यय घटाया जाता है।'
+            : '⚠️ Examiner Trap: To correct an Inflationary Gap (AD > AS at full employment), raise CRR/Repo Rate and cut Government Expenditure.',
+        'gl-ad-as-equilibrium': isHi
+            ? '⚠️ परीक्षक चेतावनी: यदि AD > AS है, तो अनियोजित मालसूची (unplanned inventory) घटती है और उत्पादक उत्पादन बढ़ाते हैं जब तक AD = AS न हो जाए।'
+            : '⚠️ Examiner Trap: When AD > AS, explicitly state that unplanned inventories fall, prompting firms to expand output until AD = AS.',
+        'gl-consumption-saving': isHi
+            ? '⚠️ परीक्षक चेतावनी: सम-विच्छेद बिंदु (Break-even) पर C = Y और S = 0 होता है; स्वायत्त उपभोग (c̄) के कारण S ऋणात्मक से शुरू होता है।'
+            : '⚠️ Examiner Trap: At the Break-even point, C = Y and S = 0; Savings starts negative (−c̄) because autonomous consumption exists even at Y = 0.',
+        'macro-national-income-methods': isHi
+            ? '⚠️ परीक्षक चेतावनी: दोहरी गणना से बचने के लिए केवल अंतिम वस्तुएँ लें या मूल्य वर्धन (GVA = उत्पादन का मूल्य − मध्यवर्ती उपभोग) जोड़ें।'
+            : '⚠️ Examiner Trap: Avoid double counting—include only final goods or sum Value Added (GVA = Value of Output − Intermediate Consumption).',
+        'macro-basic-concepts': isHi
+            ? '⚠️ परीक्षक चेतावनी: स्टॉक (समय के एक बिंदु पर, जैसे पूँजी/धन) और प्रवाह (समयावधि में, जैसे आय/निवेश) के बीच अंतर स्पष्ट करें।'
+            : '⚠️ Examiner Trap: Distinguish Stock (measured at a point of time, e.g., Wealth) from Flow (measured per period of time, e.g., Income, Investment).',
+        'macro-propensity': isHi
+            ? '⚠️ परीक्षक चेतावनी: APC + APS = 1 तथा MPC + MPS = 1; APC > 1 हो सकता है (जब C > Y), पर MPC हमेशा 0 और 1 के बीच रहता है।'
+            : '⚠️ Examiner Trap: APC + APS = 1 and MPC + MPS = 1. APC can exceed 1 (when C > Y), but MPC always lies between 0 and 1.',
+        'micro-elasticity': isHi
             ? '⚠️ परीक्षक चेतावनी: मांग की कीमत लोच (Ed) में ऋणात्मक चिह्न (-) केवल कीमत और मात्रा के विपरीत संबंध को दर्शाता है; तुलना के लिए निरपेक्ष मान लें।'
             : '⚠️ Examiner Trap: The minus sign in Ed = (−) %ΔQ/%ΔP shows inverse relation; always use the absolute value when comparing elasticity.',
-        'supply-demand': isHi
-            ? '⚠️ परीक्षक चेतावनी: वस्तु की अपनी कीमत बदलने पर "मांग में विस्तार/संकुचन" (वक्र पर संचलन) होता है, जबकि अन्य कारकों से "मांग में वृद्धि/कमी" (वक्र का खिसकाव) होता है।'
-            : '⚠️ Examiner Trap: Own-price change causes Movement (Extension/Contraction); other determinants cause Shift (Increase/Decrease).'
+        'micro-elasticity-supply': isHi
+            ? '⚠️ परीक्षक चेतावनी: यदि सीधी पूर्ति रेखा मूल बिंदु (Origin) से गुजरती है, तो Es = 1; Y-अक्ष को काटती है तो Es > 1; X-अक्ष को काटती है तो Es < 1।'
+            : '⚠️ Examiner Trap: A straight-line supply curve through the origin has Es = 1; cutting Y-axis has Es > 1; cutting X-axis has Es < 1.',
+        'micro-producer-costs': isHi
+            ? '⚠️ परीक्षक चेतावनी: MC, AC और AVC दोनों को उनके न्यूनतम बिंदु पर नीचे से काटता है; TFC स्थिर रहने से AFC आयताकार अतिपरवलय (rectangular hyperbola) होता है।'
+            : '⚠️ Examiner Trap: MC cuts both AC and AVC at their minimum points from below; AFC is a rectangular hyperbola because TFC is constant.',
+        'gl-cost-curves': isHi
+            ? '⚠️ परीक्षक चेतावनी: AC और AVC के बीच की ऊर्ध्वाधर दूरी (AFC) उत्पादन बढ़ने पर घटती जाती है, पर वे कभी आपस में नहीं मिलते।'
+            : '⚠️ Examiner Trap: The vertical gap between AC and AVC equals AFC, which shrinks as output rises, so AC and AVC never intersect.',
+        'micro-price-controls': isHi
+            ? '⚠️ परीक्षक चेतावनी: अधिकतम कीमत सीमा (Price Ceiling) संतुलन से नीचे तय होती है (कमी उत्पन्न करती है), जबकि न्यूनतम समर्थन मूल्य (Price Floor) ऊपर तय होता है (अधिशेष)।'
+            : '⚠️ Examiner Trap: Price Ceiling is set below equilibrium (creates excess demand/shortage); Price Floor is set above equilibrium (creates excess supply/surplus).',
+        'micro-market-structures': isHi
+            ? '⚠️ परीक्षक चेतावनी: पूर्ण प्रतियोगिता में AR = MR = P (क्षैतिज रेखा) होता है, जबकि एकाधिकार में AR वक्र नीचे की ओर झुकता है और MR उसके नीचे रहता है।'
+            : '⚠️ Examiner Trap: Under Perfect Competition, AR = MR = P (horizontal); under Monopoly, AR slopes downward and MR lies below AR.',
+        'micro-ppf': isHi
+            ? '⚠️ परीक्षक चेतावनी: बढ़ती सीमांत अवसर लागत (MOC) के कारण PPC मूल बिंदु की ओर नतोदर (concave) होता है; संसाधन बढ़ने पर यह दाईं ओर खिसकता है।'
+            : '⚠️ Examiner Trap: PPC is concave to the origin due to increasing Marginal Opportunity Cost (MOC); resource growth shifts PPC rightward.',
+        'gl-ppc-drag': isHi
+            ? '⚠️ परीक्षक चेतावनी: PPC के अंदर का कोई भी बिंदु संसाधनों के अल्प-उपयोग (under-utilisation) को दर्शाता है, जबकि बाहर का बिंदु अप्राप्य (unattainable) है।'
+            : '⚠️ Examiner Trap: Any point inside the PPC shows under-utilisation of resources; any point outside is unattainable with current resources.',
+        'gl-demand-movement-shift': isHi
+            ? '⚠️ परीक्षक चेतावनी: अपनी कीमत बदलने पर वक्र पर संचलन (विस्तार/संकुचन) होता है; आय या संबंधित वस्तु की कीमत बदलने पर वक्र का खिसकाव (वृद्धि/कमी) होता है।'
+            : '⚠️ Examiner Trap: Own-price change causes Movement (Extension/Contraction); income or related-good price change causes Shift (Increase/Decrease).',
+        'gl-supply-movement-shift': isHi
+            ? '⚠️ परीक्षक चेतावनी: वस्तु की अपनी कीमत से पूर्ति में संचलन होता है, जबकि आगत कीमत, तकनीक या कर बदलने पर पूर्ति वक्र खिसकता है।'
+            : '⚠️ Examiner Trap: Own-price change causes Movement along Supply; input costs, technology, or taxes cause a Shift of the Supply curve.',
+        'gl-market-equilibrium-shifts': isHi
+            ? '⚠️ परीक्षक चेतावनी: जब माँग और पूर्ति दोनों समान अनुपात में बढ़ें, तो संतुलन मात्रा बढ़ती है पर संतुलन कीमत अपरिवर्तित रहती है।'
+            : '⚠️ Examiner Trap: When both Demand and Supply increase equally, equilibrium quantity rises while equilibrium price remains unchanged.',
+        'gl-consumer-equilibrium-ic': isHi
+            ? '⚠️ परीक्षक चेतावनी: उपभोक्ता संतुलन के लिए दो शर्तें लिखें: (1) MRS_xy = P_x / P_y (स्पर्श बिंदु), और (2) संतुलन पर IC मूल बिंदु की ओर उन्नतोदर (convex) हो।'
+            : '⚠️ Examiner Trap: State both conditions for Consumer Equilibrium: (1) MRS_xy = P_x/P_y (tangency), and (2) IC must be convex to the origin.',
+        'micro-indifference-curve': isHi
+            ? '⚠️ परीक्षक चेतावनी: दो उदासीनता वक्र कभी एक-दूसरे को नहीं काटते; ऊँचा IC हमेशा अधिक संतुष्टि के स्तर को दर्शाता है।'
+            : '⚠️ Examiner Trap: Two Indifference Curves can never intersect; a higher IC always represents a higher level of satisfaction.',
+        'micro-revenue-producer-equilibrium': isHi
+            ? '⚠️ परीक्षक चेतावनी: उत्पादक संतुलन (MR = MC) के लिए यह भी लिखें कि संतुलन के बाद MC बढ़ता हुआ होना चाहिए (MC cuts MR from below)।'
+            : '⚠️ Examiner Trap: For Producer Equilibrium (MR = MC), also state the second-order condition: MC must be rising (MC cuts MR from below).',
+        'gl-revenue-producer-eq': isHi
+            ? '⚠️ परीक्षक चेतावनी: केवल MR = MC लिखना पर्याप्त नहीं है; यदि MC गिर रहा है तो वह लाभ अधिकतम करने वाला बिंदु नहीं है।'
+            : '⚠️ Examiner Trap: Writing MR = MC alone is incomplete; if MC is falling, profit is not maximised—MC must cut MR from below.',
+        'stats-correlation': isHi
+            ? '⚠️ परीक्षक चेतावनी: कार्ल पियर्सन सहसंबंध गुणांक (r) हमेशा −1 से +1 के बीच रहता है और यह इकाइयों से स्वतंत्र (unit-free) होता है।'
+            : '⚠️ Examiner Trap: Karl Pearson’s r always lies between −1 and +1 and is completely independent of units of measurement.',
+        'stats-index-numbers': isHi
+            ? '⚠️ परीक्षक चेतावनी: लास्पेयर सूचकांक में आधार वर्ष की मात्रा (q₀) भार होती है, जबकि पाशे में चालू वर्ष की मात्रा (q₁) भार होती है।'
+            : '⚠️ Examiner Trap: Laspeyres uses base-year quantities (q₀) as weights; Paasche uses current-year quantities (q₁) as weights.',
+        'ied-five-year-plans': isHi
+            ? '⚠️ परीक्षक चेतावनी: 1950–1990 की योजनाओं के चार दीर्घकालिक लक्ष्य लिखें: संवृद्धि, आधुनिकीकरण, आत्मनिर्भरता और समता (Growth, Modernisation, Self-reliance, Equity)।'
+            : '⚠️ Examiner Trap: State all four long-term goals of Five-Year Plans (1950–1990): Growth, Modernisation, Self-reliance, and Equity.',
+        'ied-comparison-neighbours': isHi
+            ? '⚠️ परीक्षक चेतावनी: भारत, चीन और पाकिस्तान की तुलना में 1978 (चीन सुधार), 1988 (पाकिस्तान) और 1991 (भारत) के सुधार वर्षों का सही उल्लेख करें।'
+            : '⚠️ Examiner Trap: Cite exact reform years when comparing India (1991), China (1978), and Pakistan (1988) along with HDI/GDP indicators.'
     };
     if (specific[id]) return specific[id];
     if (mod === 'stats') {
@@ -1066,7 +1135,7 @@ function getExamBridgeTraps(sim, isHi) {
     if (mod === 'india') {
         return isHi
             ? '⚠️ परीक्षक चेतावनी: भारतीय अर्थव्यवस्था के उत्तरों में वर्ष (जैसे 1950, 1991), नीति का नाम और आँकड़ों/तथ्यों का उल्लेख अवश्य करें।'
-            : '⚠️ Examiner Trap: In Indian Economic Development, anchor every point with exact years (e.g., 1950, 1991), policy names, and data.' ;
+            : '⚠️ Examiner Trap: In Indian Economic Development, anchor every point with exact years (e.g., 1950, 1991), policy names, and data.';
     }
     return isHi
         ? '⚠️ परीक्षक चेतावनी: वक्र के साथ संचलन (Movement) और वक्र के खिसकाव (Shift) को कभी न मिलाएँ; अक्षों पर इकाइयाँ अवश्य लिखें।'
