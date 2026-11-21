@@ -145,25 +145,26 @@ function plotlyDefaultLayout() {
     // that string, silently discarding any font styling placed here.
     // renderSimChart() normalizes the title into a styled object *after*
     // merging instead — see styledAxisTitle().
+    const isProjector = typeof document !== 'undefined' && document.body && document.body.classList.contains('projector-mode');
     const axisDefaults = {
-        tickfont: { size: 10, color: '#4b4470' },
+        tickfont: { size: isProjector ? 15 : 12.5, color: '#0f172a', family: 'Inter, sans-serif' },
         showline: true,
-        linewidth: 1.5,
-        linecolor: 'rgba(30,27,58,0.35)',
+        linewidth: 2,
+        linecolor: 'rgba(15,23,42,0.55)',
         showgrid: true,
-        gridcolor: 'rgba(30,27,58,0.08)',
+        gridcolor: 'rgba(15,23,42,0.12)',
         zeroline: true,
-        zerolinewidth: 1.5,
-        zerolinecolor: 'rgba(30,27,58,0.22)'
+        zerolinewidth: 2,
+        zerolinecolor: 'rgba(15,23,42,0.35)'
     };
 
     return {
-        margin: { t: 20, r: 30, b: 55, l: 60 },
-        font: { family: 'Inter, sans-serif', size: 11, color: '#1e1b3a' },
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(255,255,255,0.35)',
+        margin: { t: 24, r: 30, b: isProjector ? 68 : 58, l: isProjector ? 72 : 64 },
+        font: { family: 'Inter, sans-serif', size: isProjector ? 16 : 13, color: '#0f172a' },
+        paper_bgcolor: '#ffffff',
+        plot_bgcolor: '#ffffff',
         showlegend: true,
-        legend: { orientation: 'h', y: -0.32 },
+        legend: { orientation: 'h', y: -0.28, font: { size: isProjector ? 15 : 12.5, color: '#0f172a' } },
         xaxis: axisDefaults,
         yaxis: axisDefaults
     };
@@ -175,11 +176,12 @@ function plotlyDefaultLayout() {
 // that styled object after the default/per-sim axis configs are merged,
 // so the styling always applies regardless of which axis title is used.
 function styledAxisTitle(axis) {
+    const isProjector = typeof document !== 'undefined' && document.body && document.body.classList.contains('projector-mode');
     if (axis && typeof axis.title === 'string' && axis.title.length) {
         axis.title = {
             text: axis.title,
-            font: { size: 12.5, color: '#1e1b3a', family: 'Inter, sans-serif' },
-            standoff: 10
+            font: { size: isProjector ? 17 : 14, color: '#0f172a', family: 'Inter, sans-serif' },
+            standoff: 12
         };
     }
     return axis;
