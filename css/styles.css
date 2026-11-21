@@ -3011,3 +3011,70 @@ body.projector-mode .canvas-shell {
   color: var(--text1);
   font-size: 12.5px;
 }
+
+/* ── Zero-Scroll 100vh Studio Cockpit (Desktop >= 961px) ─────── */
+@media (min-width: 961px) {
+  #screen-sim.active {
+    height: calc(100vh - 58px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #screen-sim .sim-topbar {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+  }
+
+  #screen-sim .sim-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.85fr) minmax(310px, 1fr);
+    gap: 12px;
+    padding: 10px 14px 12px;
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+
+  #screen-sim .sim-left {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #screen-sim .canvas-shell {
+    flex: 1 1 62%;
+    min-height: 260px;
+    overflow: hidden;
+  }
+
+  #screen-sim #controls-panel {
+    flex: 0 1 38%;
+    max-height: 38%;
+    overflow-y: auto;
+    padding: 10px 14px;
+  }
+
+  #screen-sim #controls-panel .controls-panel-hint {
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+
+  #screen-sim .sim-right {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  #screen-sim .sim-right .readings-card {
+    flex: 0 0 auto;
+  }
+}
