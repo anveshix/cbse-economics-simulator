@@ -63,7 +63,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Economic changes must pass the economic 
 
 ## License
 
-[MIT](LICENSE) © 2026 anveshix
+No licence has been chosen for this repository yet. Until one is added, the default applies: **all rights reserved** by the author (anveshix). Please ask before reusing or redistributing the code.
+
+Bundled libraries keep their own licences, for example `js/plotly.min.js` and `js/vendor/circular-flow-3d.bundle.js` (see its `.LEGAL.txt`).
 
 ## Author
 
